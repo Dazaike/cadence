@@ -36,3 +36,28 @@ data class RecordRow(
     val primary: String,
     val secondary: String,
 )
+
+/** One blood-pressure reading; the display-oriented APIs only expose the systolic half. */
+data class BloodPressureReading(
+    val time: Instant,
+    val systolic: Float,
+    val diastolic: Float,
+)
+
+/** Hours spent in each sleep stage for one session. */
+data class SleepStageHours(
+    val rem: Float,
+    val deep: Float,
+    val light: Float,
+    val awake: Float,
+)
+
+/**
+ * One sleep session: [wake] is when it ended, [asleepHours] excludes time awake when the source
+ * reports stages, and [stages] is null when the source gave no REM/deep/light breakdown.
+ */
+data class SleepSessionData(
+    val wake: Instant,
+    val asleepHours: Float,
+    val stages: SleepStageHours?,
+)

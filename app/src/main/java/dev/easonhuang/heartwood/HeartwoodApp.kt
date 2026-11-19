@@ -1,6 +1,9 @@
 package dev.easonhuang.heartwood
 
 import android.app.Application
+import dev.easonhuang.heartwood.cloud.CloudApi
+import dev.easonhuang.heartwood.cloud.CloudPreferences
+import dev.easonhuang.heartwood.cloud.CloudSyncManager
 import dev.easonhuang.heartwood.data.DashboardLayoutRepository
 import dev.easonhuang.heartwood.data.ExportManager
 import dev.easonhuang.heartwood.data.GoalsRepository
@@ -16,6 +19,7 @@ import dev.easonhuang.heartwood.samsung.SamsungHealthWake
 import dev.easonhuang.heartwood.widget.WidgetUpdateScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -30,6 +34,8 @@ class HeartwoodApp : Application() {
     val widgetPrefs: WidgetPreferences by lazy { WidgetPreferences(this) }
     val mcpPrefs: McpServerPreferences by lazy { McpServerPreferences(this) }
     val unitPrefs: UnitPreferences by lazy { UnitPreferences(this) }
+    val cloudPrefs: CloudPreferences by lazy { CloudPreferences(this) }
+    val cloudSync: CloudSyncManager by lazy { CloudSyncManager(this, cloudPrefs, CloudApi(), goals, ::activeDataSource) }
 
     suspend fun activeDataSource(): HealthDataSource =
         if (dataSourcePrefs.source.first() == DataSource.SAMSUNG_HEALTH) samsungHealth else healthConnect
@@ -38,6 +44,11 @@ class HeartwoodApp : Application() {
         super.onCreate()
         CoroutineScope(Dispatchers.Default).launch {
             WidgetUpdateScheduler.schedule(this@HeartwoodApp, widgetPrefs.refreshIntervalMinutes.first().toLong())
+            cloudSync.ensureScheduled()
+        }
+        // Push goal edits to the cloud (no-op unless signed in with auto-sync on and goals changed).
+        CoroutineScope(Dispatchers.Default).launch {
+            goals.goals.distinctUntilChanged().collect { cloudSync.pushGoalsIfChanged() }
         }
     }
 }

@@ -19,6 +19,7 @@ import com.samsung.android.sdk.health.data.request.LocalTimeGroup
 import com.samsung.android.sdk.health.data.request.LocalTimeGroupUnit
 import com.samsung.android.sdk.health.data.request.Ordering
 import com.samsung.android.sdk.health.data.request.ReadDataRequest
+import dev.easonhuang.heartwood.data.BloodPressureReading
 import dev.easonhuang.heartwood.data.HealthDataSource
 import dev.easonhuang.heartwood.data.Metric
 import dev.easonhuang.heartwood.data.MetricDetail
@@ -26,13 +27,17 @@ import dev.easonhuang.heartwood.data.MetricKind
 import dev.easonhuang.heartwood.data.MetricSummary
 import dev.easonhuang.heartwood.data.RecordRow
 import dev.easonhuang.heartwood.data.SeriesPoint
+import dev.easonhuang.heartwood.data.SleepSessionData
+import dev.easonhuang.heartwood.data.SleepStageHours
 import dev.easonhuang.heartwood.data.UnitSystem
 import dev.easonhuang.heartwood.data.convertValue
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 /** Read-only adapter for Samsung Health Data SDK. */
 class SamsungHealthManager(private val context: Context) : HealthDataSource {
@@ -447,6 +452,66 @@ class SamsungHealthManager(private val context: Context) : HealthDataSource {
         return out
     }
 
+    // ---- Cloud sync reads ----------------------------------------------------------------------
+
+    /** One read per day (a multi-week read of watch samples is too heavy), reduced to hourly averages. */
+    override suspend fun readHourlyHeartRate(days: Int): List<SeriesPoint> {
+        val today = LocalDate.now()
+        val out = ArrayList<SeriesPoint>()
+        for (offset in days downTo 0) {
+            val day = today.minusDays(offset.toLong())
+            val end = if (offset == 0) LocalDateTime.now() else day.plusDays(1).atStartOfDay()
+            rowsBetween(DataTypes.HEART_RATE.readDataRequestBuilder, day.atStartOfDay(), end)
+                .mapNotNull { point ->
+                    point.getValue(DataType.HeartRateType.HEART_RATE)?.let { bpm ->
+                        point.timestamp().atZone(zone).truncatedTo(ChronoUnit.HOURS).toInstant() to bpm
+                    }
+                }
+                .groupBy({ it.first }, { it.second })
+                .toSortedMap()
+                .forEach { (hour, values) ->
+                    out += SeriesPoint(hour, values.average().toFloat(), timeFmt.format(hour.atZone(zone)))
+                }
+        }
+        return out
+    }
+
+    override suspend fun readBloodPressure(days: Int): List<BloodPressureReading> =
+        bloodPressureRows(days).mapNotNull { point ->
+            val systolic = point.getValue(DataType.BloodPressureType.SYSTOLIC)
+            val diastolic = point.getValue(DataType.BloodPressureType.DIASTOLIC)
+            if (systolic == null || diastolic == null) null
+            else BloodPressureReading(point.timestamp(), systolic, diastolic)
+        }
+
+    override suspend fun readSleepSessions(days: Int): List<SleepSessionData> =
+        sleepRows(days).mapNotNull { point ->
+            var rem = 0f
+            var deep = 0f
+            var light = 0f
+            var awake = 0f
+            point.getValue(DataType.SleepType.SESSIONS).orEmpty().forEach { session ->
+                session.stages.orEmpty().forEach { stage ->
+                    val hours = Duration.between(stage.startTime, stage.endTime).toMillis() / MILLIS_PER_HOUR
+                    when (stage.stage) {
+                        DataType.SleepType.StageType.REM -> rem += hours
+                        DataType.SleepType.StageType.DEEP -> deep += hours
+                        DataType.SleepType.StageType.LIGHT -> light += hours
+                        DataType.SleepType.StageType.AWAKE -> awake += hours
+                        else -> Unit
+                    }
+                }
+            }
+            val staged = rem + deep + light
+            val hours = if (staged > 0f) {
+                staged
+            } else {
+                (point.getValue(DataType.SleepType.DURATION)?.toMillis() ?: 0L) / MILLIS_PER_HOUR
+            }
+            if (hours <= 0f) null
+            else SleepSessionData(point.timestamp(), hours, if (staged > 0f) SleepStageHours(rem, deep, light, awake) else null)
+        }.sortedBy { it.wake }
+
     private fun HealthDataPoint.timestamp(): Instant = requireNotNull(endTime ?: startTime ?: updateTime)
 
     private fun HealthDataPoint.float(field: Field<Float>): Float = requireNotNull(getValue(field))
@@ -496,6 +561,7 @@ class SamsungHealthManager(private val context: Context) : HealthDataSource {
 
     private companion object {
         const val HR_BUCKET_SECONDS = 300L
+        const val MILLIS_PER_HOUR = 3_600_000f
         const val UNSUPPORTED_PERMISSION = "samsung:unsupported"
         const val UNSUPPORTED_CAPTION = "Not available from Samsung Health"
         const val METERS_PER_KILOMETER = 1000f

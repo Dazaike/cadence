@@ -23,6 +23,7 @@ import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.records.Vo2MaxRecord
 import androidx.health.connect.client.records.WeightRecord
+import androidx.health.connect.client.request.AggregateGroupByDurationRequest
 import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
@@ -283,6 +284,79 @@ class HealthConnectManager(private val context: Context) : HealthDataSource {
         else -> series(metric, days, unitSystem)
     }
 
+    // ---- Cloud sync reads ----------------------------------------------------------------------
+
+    /** Hourly heart-rate averages via Health Connect aggregation, in 14-day slices to bound each request. */
+    override suspend fun readHourlyHeartRate(days: Int): List<SeriesPoint> {
+        val now = Instant.now()
+        var cursor = daysAgoStart(days)
+        val out = ArrayList<SeriesPoint>()
+        while (cursor < now) {
+            val end = minOf(cursor.plus(Duration.ofDays(HOURLY_SLICE_DAYS)), now)
+            client.aggregateGroupByDuration(
+                AggregateGroupByDurationRequest(
+                    metrics = setOf(HeartRateRecord.BPM_AVG),
+                    timeRangeFilter = TimeRangeFilter.between(cursor, end),
+                    timeRangeSlicer = Duration.ofHours(1),
+                )
+            ).forEach { bucket ->
+                bucket.result[HeartRateRecord.BPM_AVG]?.let { avg ->
+                    out += SeriesPoint(bucket.startTime, avg.toFloat(), timeFmt.format(bucket.startTime.atZone(zone)))
+                }
+            }
+            cursor = end
+        }
+        return out
+    }
+
+    override suspend fun readBloodPressure(days: Int): List<BloodPressureReading> =
+        read(BloodPressureRecord::class, daysAgoStart(days), Instant.now())
+            .filterIsInstance<BloodPressureRecord>()
+            .sortedBy { it.time }
+            .map {
+                BloodPressureReading(
+                    it.time,
+                    it.systolic.inMillimetersOfMercury.toFloat(),
+                    it.diastolic.inMillimetersOfMercury.toFloat(),
+                )
+            }
+
+    override suspend fun readSleepSessions(days: Int): List<SleepSessionData> =
+        read(SleepSessionRecord::class, daysAgoStart(days), Instant.now())
+            .filterIsInstance<SleepSessionRecord>()
+            .sortedBy { it.endTime }
+            .mapNotNull { record ->
+                var rem = 0f
+                var deep = 0f
+                var light = 0f
+                var awake = 0f
+                var unspecifiedAsleep = 0f
+                for (stage in record.stages) {
+                    val hours = Duration.between(stage.startTime, stage.endTime).toMillis() / MILLIS_PER_HOUR
+                    when (stage.stage) {
+                        SleepSessionRecord.STAGE_TYPE_REM -> rem += hours
+                        SleepSessionRecord.STAGE_TYPE_DEEP -> deep += hours
+                        SleepSessionRecord.STAGE_TYPE_LIGHT -> light += hours
+                        SleepSessionRecord.STAGE_TYPE_SLEEPING -> unspecifiedAsleep += hours
+                        SleepSessionRecord.STAGE_TYPE_AWAKE,
+                        SleepSessionRecord.STAGE_TYPE_AWAKE_IN_BED -> awake += hours
+                    }
+                }
+                val staged = rem + deep + light
+                val asleep = staged + unspecifiedAsleep
+                val total = Duration.between(record.startTime, record.endTime).toMillis() / MILLIS_PER_HOUR
+                val hours = if (asleep > 0f) asleep else total
+                if (hours <= 0f) {
+                    null
+                } else {
+                    SleepSessionData(
+                        wake = record.endTime,
+                        asleepHours = hours,
+                        stages = if (staged > 0f) SleepStageHours(rem, deep, light, awake) else null,
+                    )
+                }
+            }
+
     // ---- Series builders -----------------------------------------------------------------------
 
     private suspend fun series(metric: Metric, days: Int, unitSystem: UnitSystem = UnitSystem.IMPERIAL): List<SeriesPoint> {
@@ -451,5 +525,7 @@ class HealthConnectManager(private val context: Context) : HealthDataSource {
         // without this. Older-than-30-days reads need the history permission.
         const val PERMISSION_READ_IN_BACKGROUND = "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
         const val PERMISSION_READ_HISTORY = "android.permission.health.READ_HEALTH_DATA_HISTORY"
+        private const val HOURLY_SLICE_DAYS = 14L
+        private const val MILLIS_PER_HOUR = 3_600_000f
     }
 }
