@@ -67,6 +67,7 @@ import androidx.compose.foundation.background
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.easonhuang.heartwood.BuildConfig
+import dev.easonhuang.heartwood.cloud.CloudSyncManager
 import dev.easonhuang.heartwood.data.ExportFormat
 import dev.easonhuang.heartwood.data.ExportManager
 import dev.easonhuang.heartwood.data.HealthDataSource
@@ -92,6 +93,7 @@ fun SettingsScreen(
     mcpPrefs: McpServerPreferences,
     dataSourcePrefs: DataSourcePreferences,
     unitPrefs: UnitPreferences,
+    cloudSync: CloudSyncManager,
     bottomInset: Dp,
     onManagePermissions: () -> Unit,
 ) {
@@ -292,6 +294,8 @@ fun SettingsScreen(
                     )
                 }
             }
+            item { SectionLabel("Cloud sync") }
+            item { SettingsCard { CloudSyncCard(cloudSync) } }
             item { SectionLabel("AI access") }
             item {
                 SettingsCard {
@@ -380,7 +384,8 @@ fun SettingsScreen(
             }
             item {
                 Text(
-                    "Heartwood never sends your data anywhere unless you turn on the local AI server above.",
+                    "Heartwood never sends your data anywhere unless you sign in to Cloud sync above. " +
+                        "The local AI server stays on this device (loopback only).",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),

@@ -13,6 +13,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import dev.easonhuang.heartwood.ui.HeartwoodRoot
 import dev.easonhuang.heartwood.ui.theme.HeartwoodTheme
 
@@ -43,6 +45,7 @@ class MainActivity : ComponentActivity() {
                         mcpPrefs = app.mcpPrefs,
                         dataSourcePrefs = app.dataSourcePrefs,
                         unitPrefs = app.unitPrefs,
+                        cloudSync = app.cloudSync,
                         deepLinkMetric = deepLinkMetric,
                         onDeepLinkConsumed = { deepLinkMetric = null },
                     )
@@ -51,6 +54,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        // Opening the app counts as a sync trigger (throttled and gated on sign-in inside).
+        lifecycleScope.launch { (application as HeartwoodApp).cloudSync.syncOnOpen() }
+    }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)

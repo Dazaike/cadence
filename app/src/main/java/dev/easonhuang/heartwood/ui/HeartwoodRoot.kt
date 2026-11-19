@@ -36,6 +36,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import dev.easonhuang.heartwood.cloud.CloudSyncManager
 import dev.easonhuang.heartwood.data.UnitPreferences
 import dev.easonhuang.heartwood.data.DashboardLayoutRepository
 import dev.easonhuang.heartwood.data.GoalsRepository
@@ -79,6 +80,7 @@ fun HeartwoodRoot(
     mcpPrefs: McpServerPreferences,
     dataSourcePrefs: DataSourcePreferences,
     unitPrefs: UnitPreferences,
+    cloudSync: CloudSyncManager,
     deepLinkMetric: String? = null,
     onDeepLinkConsumed: () -> Unit = {},
 ) {
@@ -93,6 +95,7 @@ fun HeartwoodRoot(
             mcpPrefs = mcpPrefs,
             dataSourcePrefs = dataSourcePrefs,
             unitPrefs = unitPrefs,
+            cloudSync = cloudSync,
             deepLinkMetric = deepLinkMetric,
             onDeepLinkConsumed = onDeepLinkConsumed,
         )
@@ -105,6 +108,7 @@ fun HeartwoodRoot(
             mcpPrefs = mcpPrefs,
             dataSourcePrefs = dataSourcePrefs,
             unitPrefs = unitPrefs,
+            cloudSync = cloudSync,
             deepLinkMetric = deepLinkMetric,
             onDeepLinkConsumed = onDeepLinkConsumed,
         )
@@ -121,6 +125,7 @@ private fun HealthConnectRoot(
     mcpPrefs: McpServerPreferences,
     dataSourcePrefs: DataSourcePreferences,
     unitPrefs: UnitPreferences,
+    cloudSync: CloudSyncManager,
     deepLinkMetric: String? = null,
     onDeepLinkConsumed: () -> Unit = {},
 ) {
@@ -208,6 +213,7 @@ private fun HealthConnectRoot(
             mcpPrefs = mcpPrefs,
             dataSourcePrefs = dataSourcePrefs,
             unitPrefs = unitPrefs,
+            cloudSync = cloudSync,
             onManagePermissions = ::manageAccess,
             deepLinkMetric = deepLinkMetric,
             onDeepLinkConsumed = onDeepLinkConsumed,
@@ -225,6 +231,7 @@ private fun SamsungHealthRoot(
     mcpPrefs: McpServerPreferences,
     dataSourcePrefs: DataSourcePreferences,
     unitPrefs: UnitPreferences,
+    cloudSync: CloudSyncManager,
     deepLinkMetric: String? = null,
     onDeepLinkConsumed: () -> Unit = {},
 ) {
@@ -283,6 +290,7 @@ private fun SamsungHealthRoot(
             mcpPrefs = mcpPrefs,
             dataSourcePrefs = dataSourcePrefs,
             unitPrefs = unitPrefs,
+            cloudSync = cloudSync,
             onManagePermissions = ::connect,
             deepLinkMetric = deepLinkMetric,
             onDeepLinkConsumed = onDeepLinkConsumed,
@@ -317,6 +325,7 @@ private fun MainNav(
     mcpPrefs: McpServerPreferences,
     dataSourcePrefs: DataSourcePreferences,
     unitPrefs: UnitPreferences,
+    cloudSync: CloudSyncManager,
     onManagePermissions: () -> Unit,
     deepLinkMetric: String? = null,
     onDeepLinkConsumed: () -> Unit = {},
@@ -394,6 +403,7 @@ private fun MainNav(
                     mcpPrefs = mcpPrefs,
                     dataSourcePrefs = dataSourcePrefs,
                     unitPrefs = unitPrefs,
+                    cloudSync = cloudSync,
                     bottomInset = bottomInset,
                     onManagePermissions = onManagePermissions,
                 )

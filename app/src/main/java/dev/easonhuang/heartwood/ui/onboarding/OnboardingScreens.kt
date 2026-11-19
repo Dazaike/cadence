@@ -56,8 +56,8 @@ fun OnboardingScreen(onConnect: () -> Unit, sourceName: String = "Health Connect
             fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         Spacer(Modifier.height(12.dp))
         Text(
-            "A private, open-source window into your $sourceName data. Heartwood only reads, " +
-                "nothing ever leaves your device.",
+            "A private, open-source window into your $sourceName data. Heartwood only reads, and " +
+                "nothing leaves your device unless you opt in to cloud sync.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
