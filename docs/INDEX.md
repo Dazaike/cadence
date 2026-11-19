@@ -1,5 +1,6 @@
 # Documentation index
 
+- `CLOUD.md` — how the app, the cloud backend and the web dashboard fit together (optional cloud sync).
 - `plan/analysis/samsung-health-direct.md` — direct Samsung Health integration delivery analysis.
 - `plan/tasks/health-source-001.md` — source abstraction and persisted selection foundation.
 - `plan/tasks/samsung-sdk-002.md` — direct Samsung Health SDK implementation; blocked until the vendored AAR is supplied.

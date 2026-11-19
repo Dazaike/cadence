@@ -1,10 +1,10 @@
 # Heartwood
 
-Your health data is already on your phone. Heartwood lets you see it without gifting it to an account system, an ad network, or a venture-backed "wellness platform" that will eventually email you about mindfulness.
+Your health data is already on your phone. Heartwood lets you see it without gifting it to an ad network or a venture-backed "wellness platform" that will eventually email you about mindfulness. If you *want* it on a web dashboard or in front of an AI assistant, there is an optional cloud sync you have to sign in to first.
 
-Heartwood is a private, **read-only** Android viewer for [Health Connect](https://developer.android.com/health-connect) and, if you insist on Samsung's ecosystem, Samsung Health. It reads the data already on your device, renders it properly, and sends precisely none of it anywhere.
+Heartwood is a private, **read-only** Android viewer for [Health Connect](https://developer.android.com/health-connect) and, if you insist on Samsung's ecosystem, Samsung Health. It reads the data already on your device and renders it properly. It sends none of it anywhere unless you sign in to the optional cloud sync.
 
-> No accounts. No network permission. No trackers. Your data stays on your device. Revolutionary, apparently.
+> No ads. No trackers. No analytics. Nothing leaves your device until you choose to sign in to cloud sync. Revolutionary, apparently.
 
 ## What it does
 
@@ -12,22 +12,23 @@ Heartwood is a private, **read-only** Android viewer for [Health Connect](https:
 - **Detail views**, charts, statistics, and recent records for every metric. Numbers, organized. A bold new concept.
 - **Weekly summary**, daily averages against goals, progress rings, and week-over-week trends. You set the goals; the app declines to invent a lifestyle for you.
 - **Home-screen widgets**, dynamically themed Glance + Material 3 widgets for the metrics worth seeing before you unlock your phone.
-- **Export & AI Share**, write CSV or JSON through Android's file picker, or share formatted Markdown directly with your AI assistant through the system share sheet. No bespoke cloud relay because that would be stupid.
+- **Export & AI Share**, write CSV or JSON through Android's file picker, or share formatted Markdown directly with your AI assistant through the system share sheet. This works fully offline; nothing is relayed through a server.
 - **Unit system**, switch between Imperial (miles, lbs, in, fl oz) and Metric (km, kg, cm, L). Imperial is the default. Debate it with physics, not us.
 - **Customizable dashboard**, reorder metric tiles and hide the noise. Your Today view, not a product manager's.
 - **Samsung Health** *(optional)*, read directly from the Samsung Health app on-device instead of Health Connect.
-- **Local AI server (MCP)** *(optional)*, an opt-in loopback Model Context Protocol server for local LLMs and tools. `localhost` only. The cloud does not need your resting heart rate.
+- **Local AI server (MCP)** *(optional)*, an opt-in loopback Model Context Protocol server for local LLMs and tools. `localhost` only. Unchanged by cloud sync: it never leaves the device and does not use an account.
+- **Cloud sync** *(optional, off until you sign in)*, create an account or sign in from Settings > Cloud sync and Heartwood uploads your readings (and goals) to a Heartwood cloud server so you can see them on the web dashboard and let ChatGPT, Claude or another AI assistant read them through the cloud's remote MCP server. Details below.
 
 ## The boringly competent stack
 
 - Kotlin, Jetpack Compose, Material 3, dynamic color
 - `androidx.health.connect:connect-client` and Samsung Health Data SDK for on-device reads
-- `androidx.glance` widgets and WorkManager refreshes
-- DataStore for goals, dashboard layout, data source, and unit preferences
-- NanoHTTPD for the optional loopback MCP server
+- `androidx.glance` widgets and WorkManager refreshes (widgets, and cloud sync when enabled)
+- DataStore for goals, dashboard layout, data source, unit and cloud-sync preferences; the cloud session token is encrypted with an Android Keystore key
+- NanoHTTPD for the optional loopback MCP server; plain `HttpURLConnection` for cloud sync (no extra networking dependency)
 - `minSdk 30`, `targetSdk 36`
 
-No "AI-native health intelligence layer." Just native Android code reading local data like it was designed to.
+No "AI-native health intelligence layer." Just native Android code reading local data like it was designed to, plus an opt-in uploader if you ask for one.
 
 ## Build it
 
@@ -73,9 +74,22 @@ Store descriptions and changelogs in `fastlane/metadata/android/en-US/`. The `fd
 
 ## Privacy: the entire point
 
-Heartwood requests only **read** permissions. It never transmits data to an external server. You decide which types it can read and can revoke them whenever you like.
+Heartwood requests only **read** permissions on your health data. You decide which types it can read and can revoke them whenever you like.
 
-The optional Samsung Health integration reads directly from Samsung Health through its official on-device SDK. The optional AI server listens strictly on loopback (`localhost`). Your personal health record stays on your device, where it belongs. The robots have standards.
+**Out of the box, nothing is transmitted.** There are no accounts, no analytics and no trackers. The app declares the `INTERNET` permission, but it is only used by the two opt-in features below.
+
+- **Local AI server (MCP)**, opt-in, listens strictly on loopback (`127.0.0.1`). No account, no cloud.
+- **Cloud sync**, opt-in, and does nothing until you sign in (Settings > Cloud sync). After you sign in, Heartwood uploads your health readings (steps, distance, energy, floors, exercise, hydration, hourly average heart rate, resting heart rate, HRV, sleep sessions with stages, SpO₂, respiratory rate, VO₂ max, weight, height, blood pressure, blood glucose) and your goals over HTTPS to the server address shown in Settings (default `https://heartwood-api.dazaike.workers.dev`, editable; plain HTTP is accepted only for `localhost`). Signing out stops syncing and forgets the session on the phone; data already uploaded stays in your cloud account until you delete it from the dashboard. Heartwood stays read-only against Health Connect, and cloud sync never writes to it.
+
+### Cloud sync details
+
+- **Account:** email and password, handled by the server (PBKDF2-hashed). The phone stores only a session token, sealed with a non-exportable Android Keystore AES-256-GCM key.
+- **When it syncs:** right after sign-in (first sync backfills up to 365 days, or 30 days if Health Connect's history permission is not granted), about every 15 minutes while online if auto-sync is on, when you open the app (at most once per 5 minutes), and when you tap "Sync now". Later syncs re-send the last 3 days; uploads are idempotent.
+- **Units:** always metric/SI on the wire (km, kg, cm, L, mg/dL...), whatever your on-screen unit setting is. Goals are sent in the dashboard's units (miles, fl oz).
+- **Remote MCP:** create a read-only API token on the web dashboard and point your AI assistant at the cloud's `/mcp` endpoint. That endpoint is separate from the on-device loopback server above. How the app, cloud and dashboard fit together: [docs/CLOUD.md](docs/CLOUD.md).
+- **Samsung Health:** cloud sync uses whichever data source is active in Settings. Samsung Health has no resting HR, HRV, respiratory rate or VO₂ max, so those are never synced from it.
+
+The optional Samsung Health integration reads directly from Samsung Health through its official on-device SDK. Your personal health record stays on your device until you choose to sync it. The robots have standards.
 
 ## License
 

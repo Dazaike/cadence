@@ -1,0 +1,3 @@
+- New: optional Cloud sync. Sign in to copy your readings to your own Heartwood cloud account for the web dashboard and AI assistants (remote MCP)
+- Nothing is uploaded until you sign in; Heartwood stays read-only
+- The on-device loopback AI server is unchanged
