@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.SystemClock
 import android.util.Log
 import dev.dazaike.cadence.MainActivity
+import dev.dazaike.cadence.data.StatusHub
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -21,7 +22,11 @@ import kotlinx.coroutines.sync.withLock
  *     Android only lets an app open another app while it is itself visible, so this does nothing
  *     when Cadence is in the background ([activity] is maintained by [MainActivity]).
  */
-class SamsungHealthWake(private val context: Context, private val shizuku: ShizukuWake) {
+class SamsungHealthWake(
+    private val context: Context,
+    private val shizuku: ShizukuWake,
+    private val status: StatusHub,
+) {
     private val mutex = Mutex()
     private var lastWakeElapsed = 0L
 
@@ -40,20 +45,31 @@ class SamsungHealthWake(private val context: Context, private val shizuku: Shizu
         val launch = runCatching { app.packageManager.getLaunchIntentForPackage(SHEALTH_PACKAGE) }.getOrNull()
             ?: return false
 
-        val silent = shizuku.syncSilently()
-        if (silent != null) {
-            lastWakeElapsed = SystemClock.elapsedRealtime()
-            return silent
+        try {
+            status.set(StatusHub.WAKE, "Syncing Samsung Health with your watch…")
+            val silent = shizuku.syncSilently()
+            if (silent != null) {
+                lastWakeElapsed = SystemClock.elapsedRealtime()
+                return silent
+            }
+            status.set(StatusHub.WAKE, "Opening Samsung Health to sync your watch…")
+            bounce(app, launch)
+        } finally {
+            status.clear(StatusHub.WAKE)
         }
-        bounce(app, launch)
     }
 
     /** The hidden-display method only: safe to call from a background job, never shows anything. */
     suspend fun wakeSilently(minIntervalMs: Long): Boolean = mutex.withLock {
         if (tooSoon(minIntervalMs)) return false
-        val result = shizuku.syncSilently() ?: return false
-        lastWakeElapsed = SystemClock.elapsedRealtime()
-        result
+        try {
+            status.set(StatusHub.WAKE, "Syncing Samsung Health with your watch…")
+            val result = shizuku.syncSilently() ?: return false
+            lastWakeElapsed = SystemClock.elapsedRealtime()
+            result
+        } finally {
+            status.clear(StatusHub.WAKE)
+        }
     }
 
     private fun tooSoon(minIntervalMs: Long): Boolean =

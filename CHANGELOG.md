@@ -5,9 +5,12 @@
 ### Added
 - Samsung Health: opening Cadence (and refreshing, at most once a minute) now makes Samsung Health sync from the watch before Cadence reads. Without Shizuku it is brought to the front for 5 seconds and Cadence returns; this only runs while Cadence is on screen, because Android blocks one app from opening another from the background. The old wake only connected to the SDK and never opened the app.
 - Optional Shizuku support (Data Sources > Silent Samsung Health sync): with Shizuku running and Cadence allowed, Samsung Health is opened on a hidden virtual display instead, so nothing appears on screen and the wait ends as soon as the watch sync finishes (about 3 seconds). It also runs before each cloud sync, including background ones. Falls back to the visible method when Shizuku isn't available.
+- A status line at the top of the app while Cadence is working: opening Samsung Health, syncing the watch, reading health data (with counts), loading heart-rate history, and each stage of a cloud sync.
 
 ### Changed
 - Overview widgets no longer have a full-screen button.
+- Overview: the layout picker, Edit, New layout, Reset and Delete controls (and edit mode with its size and move buttons) are gone. The subtitle now shows when the data was last updated and the last cloud sync result instead of "Data through".
+- The launcher icon's heart is optically centred (it sat high).
 
 ## [v2.0.0] - 2026-11-19
 

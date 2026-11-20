@@ -16,6 +16,7 @@ import dev.dazaike.cadence.data.HealthViewLoader
 import dev.dazaike.cadence.data.Layout
 import dev.dazaike.cadence.data.LoadedView
 import dev.dazaike.cadence.data.Metric
+import dev.dazaike.cadence.data.StatusHub
 import dev.dazaike.cadence.data.UnitPreferences
 import dev.dazaike.cadence.data.normalized
 import dev.dazaike.cadence.data.UnitSystem
@@ -46,6 +47,7 @@ private val GOAL_METRICS = mapOf(
 class AppViewModel(
     private val source: HealthDataSource,
     private val samsungWake: SamsungHealthWake?,
+    private val status: StatusHub,
     private val appPrefs: AppPreferences,
     private val unitPrefs: UnitPreferences,
     private val goalsRepo: GoalsRepository,
@@ -84,8 +86,10 @@ class AppViewModel(
             _refreshing.value = true
             try {
                 if (wake) runCatching { samsungWake?.wake(minIntervalMs = if (userInitiated) WAKE_INTERVAL_MS else 0L) }
-                _loaded.value = HealthViewLoader.load(source) { partial -> _loaded.value = partial }
+                status.set(StatusHub.LOAD, "Reading your health data…")
+                _loaded.value = HealthViewLoader.load(source, onProgress = { status.set(StatusHub.LOAD, it) }) { partial -> _loaded.value = partial }
             } finally {
+                status.clear(StatusHub.LOAD)
                 _refreshing.value = false
             }
         }
@@ -125,10 +129,6 @@ class AppViewModel(
     }
 
     fun updateLayout(id: String, change: (Layout) -> Layout) = launch { layoutRepo.update(id, change) }
-    fun setActiveLayout(id: String) = launch { layoutRepo.setActive(id) }
-    fun addLayout(name: String, copyFrom: String?) = launch { layoutRepo.add(name, copyFrom) }
-    fun removeLayout(id: String) = launch { layoutRepo.remove(id) }
-    fun resetLayout(id: String) = launch { layoutRepo.reset(id) }
 
     private fun launch(block: suspend () -> Unit) {
         viewModelScope.launch { block() }
@@ -141,12 +141,13 @@ class AppViewModel(
         fun factory(
             source: HealthDataSource,
             samsungWake: SamsungHealthWake?,
+            status: StatusHub,
             appPrefs: AppPreferences,
             unitPrefs: UnitPreferences,
             goalsRepo: GoalsRepository,
             layoutRepo: DashboardLayoutRepository,
         ) = viewModelFactory {
-            initializer { AppViewModel(source, samsungWake, appPrefs, unitPrefs, goalsRepo, layoutRepo) }
+            initializer { AppViewModel(source, samsungWake, status, appPrefs, unitPrefs, goalsRepo, layoutRepo) }
         }
     }
 }

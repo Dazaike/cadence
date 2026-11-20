@@ -161,10 +161,6 @@ fun CadenceShell(
             override fun setAccent(id: String) = vm.setAccent(id)
             override fun resetPreferences() = vm.resetPreferences()
             override fun updateLayout(id: String, change: (Layout) -> Layout) = vm.updateLayout(id, change)
-            override fun setActiveLayout(id: String) = vm.setActiveLayout(id)
-            override fun addLayout(name: String, copyFrom: String?) = vm.addLayout(name, copyFrom)
-            override fun removeLayout(id: String) = vm.removeLayout(id)
-            override fun resetLayout(id: String) = vm.resetLayout(id)
             override fun refresh() = vm.refresh(userInitiated = true)
         }
     }
@@ -181,11 +177,17 @@ fun CadenceShell(
             if (wide) {
                 Row(Modifier.fillMaxSize()) {
                     Rail(route, { routeState.value = it }, services, p?.settings?.themeMode ?: ThemeMode.SYSTEM, actions::setThemeMode) { routeState.value = Route.SETTINGS }
-                    Page(ctx, route, refreshing, vm, Modifier.weight(1f).fillMaxHeight())
+                    Column(Modifier.weight(1f).fillMaxHeight().statusBarsPadding()) {
+                        StatusLine()
+                        Page(ctx, route, refreshing, vm, Modifier.weight(1f).fillMaxWidth())
+                    }
                 }
             } else {
                 Box(Modifier.fillMaxSize()) {
-                    Page(ctx, route, refreshing, vm, Modifier.fillMaxSize())
+                    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+                        StatusLine()
+                        Page(ctx, route, refreshing, vm, Modifier.weight(1f).fillMaxWidth())
+                    }
                     BottomBar(route, { routeState.value = it }, Modifier.align(Alignment.BottomCenter).padding(horizontal = BAR_MARGIN).padding(bottom = BAR_MARGIN + navBottom))
                 }
             }
@@ -198,7 +200,7 @@ fun CadenceShell(
 @Composable
 private fun Page(ctx: AppCtx?, route: Route, refreshing: Boolean, vm: AppViewModel, modifier: Modifier) {
     val reduce = LocalReduceMotion.current
-    PullToRefreshBox(isRefreshing = refreshing && ctx != null, onRefresh = { vm.refresh(userInitiated = true) }, modifier = modifier.statusBarsPadding()) {
+    PullToRefreshBox(isRefreshing = refreshing && ctx != null, onRefresh = { vm.refresh(userInitiated = true) }, modifier = modifier) {
         if (ctx == null) {
             PageSkeleton()
         } else {

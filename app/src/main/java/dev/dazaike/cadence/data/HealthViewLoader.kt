@@ -7,6 +7,7 @@ import dev.dazaike.cadence.analytics.SleepStages
 import dev.dazaike.cadence.analytics.buildView
 import java.time.Instant
 import java.time.LocalDate
+import java.util.concurrent.atomic.AtomicInteger
 import java.time.ZoneId
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.async
@@ -45,7 +46,11 @@ object HealthViewLoader {
     private const val HEART_CHUNK_DAYS = 30
     private const val PARALLEL_READS = 4
 
-    suspend fun load(source: HealthDataSource, onPartial: suspend (LoadedView) -> Unit = {}): LoadedView = coroutineScope {
+    suspend fun load(
+        source: HealthDataSource,
+        onProgress: (String) -> Unit = {},
+        onPartial: suspend (LoadedView) -> Unit = {},
+    ): LoadedView = coroutineScope {
         val zone = ZoneId.systemDefault()
         val today = LocalDate.now(zone)
         val granted = runCatching { source.grantedPermissions() }.getOrDefault(emptySet())
@@ -65,16 +70,21 @@ object HealthViewLoader {
             heartLoading = heartLoading,
         )
 
-        val reads = metrics.filter { it != Metric.HEART_RATE }.map { metric ->
+        val others = metrics.filter { it != Metric.HEART_RATE }
+        val finished = AtomicInteger(0)
+        onProgress("Reading your health data (0 of ${others.size})…")
+        val reads = others.map { metric ->
             async {
                 gate.withPermit {
-                    try {
+                    val result = try {
                         metric to read(source, metric, days, zone)
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
                         metric to null
                     }
+                    onProgress("Reading your health data (${finished.incrementAndGet()} of ${others.size})…")
+                    result
                 }
             }
         }.awaitAll()
@@ -100,11 +110,13 @@ object HealthViewLoader {
         }
 
         val recent = minOf(RECENT_HEART_DAYS, days)
+        onProgress("Reading heart rate: last $recent days…")
         readHeart(recent, 0)
         var to = recent + 1
         while (to <= days) {
             onPartial(snapshot(true))
             val from = minOf(to + HEART_CHUNK_DAYS - 1, days)
+            onProgress("Loading heart rate history: ${to - 1} of $days days…")
             readHeart(from, to)
             to = from + 1
         }

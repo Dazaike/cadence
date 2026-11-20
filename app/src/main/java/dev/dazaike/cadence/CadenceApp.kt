@@ -15,6 +15,7 @@ import dev.dazaike.cadence.data.HealthDataSource
 import dev.dazaike.cadence.mcp.McpServerPreferences
 import dev.dazaike.cadence.data.WidgetPreferences
 import dev.dazaike.cadence.data.UnitPreferences
+import dev.dazaike.cadence.data.StatusHub
 import dev.dazaike.cadence.samsung.SamsungHealthManager
 import dev.dazaike.cadence.samsung.SamsungHealthWake
 import dev.dazaike.cadence.samsung.ShizukuWake
@@ -30,7 +31,8 @@ class CadenceApp : Application() {
     val appPrefs: AppPreferences by lazy { AppPreferences(this) }
     val samsungHealth: SamsungHealthManager by lazy { SamsungHealthManager(this) }
     val shizukuWake: ShizukuWake by lazy { ShizukuWake(this) }
-    val samsungWake: SamsungHealthWake by lazy { SamsungHealthWake(this, shizukuWake) }
+    val status: StatusHub by lazy { StatusHub() }
+    val samsungWake: SamsungHealthWake by lazy { SamsungHealthWake(this, shizukuWake, status) }
     val dataSourcePrefs: DataSourcePreferences by lazy { DataSourcePreferences(this) }
     val goals: GoalsRepository by lazy { GoalsRepository(this) }
     val exporter: ExportManager by lazy { ExportManager(this, ::activeDataSource, goals, unitPrefs) }
@@ -39,7 +41,7 @@ class CadenceApp : Application() {
     val mcpPrefs: McpServerPreferences by lazy { McpServerPreferences(this) }
     val unitPrefs: UnitPreferences by lazy { UnitPreferences(this) }
     val cloudPrefs: CloudPreferences by lazy { CloudPreferences(this) }
-    val cloudSync: CloudSyncManager by lazy { CloudSyncManager(this, cloudPrefs, CloudApi(), goals, ::activeDataSource) }
+    val cloudSync: CloudSyncManager by lazy { CloudSyncManager(this, cloudPrefs, CloudApi(), goals, status, ::activeDataSource) }
 
     suspend fun activeDataSource(): HealthDataSource =
         if (dataSourcePrefs.source.first() == DataSource.SAMSUNG_HEALTH) samsungHealth else healthConnect

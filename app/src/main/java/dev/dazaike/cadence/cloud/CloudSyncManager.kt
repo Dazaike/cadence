@@ -10,6 +10,7 @@ import dev.dazaike.cadence.data.KM_TO_MILES
 import dev.dazaike.cadence.data.LITERS_TO_FL_OZ
 import dev.dazaike.cadence.data.Metric
 import dev.dazaike.cadence.data.UnitSystem
+import dev.dazaike.cadence.data.StatusHub
 import dev.dazaike.cadence.CadenceApp
 import dev.dazaike.cadence.samsung.SamsungHealthManager
 import java.time.Instant
@@ -52,6 +53,7 @@ class CloudSyncManager(
     private val prefs: CloudPreferences,
     private val api: CloudApi,
     private val goalsRepo: GoalsRepository,
+    private val status: StatusHub,
     private val activeSource: suspend () -> HealthDataSource,
 ) {
     private val mutex = Mutex()
@@ -130,12 +132,14 @@ class CloudSyncManager(
         if (!settings.signedIn || (requireAutoSync && !settings.autoSync)) return SyncOutcome.Skipped
         val token = prefs.token() ?: return SyncOutcome.Skipped
         running.value = true
+        status.set(StatusHub.CLOUD, "Syncing to cloud…")
         try {
             val outcome = doSync(settings.serverUrl, token)
             record(token, outcome)
             outcome
         } finally {
             running.value = false
+            status.clear(StatusHub.CLOUD)
         }
     }
 
@@ -183,6 +187,7 @@ class CloudSyncManager(
         val unreadable = ArrayList<String>()
         for (metric in Metric.entries) {
             if (source.permissionFor(metric) !in granted) continue
+            status.set(StatusHub.CLOUD, "Syncing to cloud: reading ${metric.title.lowercase()}…")
             val stateKey = "$sourceId:${metric.key}:$tier"
             val last = synced[stateKey]?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
             val days = when (last) {
@@ -208,6 +213,7 @@ class CloudSyncManager(
         var abort: SyncOutcome? = null
 
         for (batch in points.sortedBy { it.wire.key }.chunked(MAX_POINTS_PER_REQUEST)) {
+            status.set(StatusHub.CLOUD, "Syncing to cloud: uploading $sent of ${points.size} readings…")
             when (val result = send(base, token, batch, zone)) {
                 is CloudResult.Ok -> {
                     sent += batch.size

@@ -118,10 +118,6 @@ interface AppActions {
     fun resetPreferences()
 
     fun updateLayout(id: String, change: (Layout) -> Layout)
-    fun setActiveLayout(id: String)
-    fun addLayout(name: String, copyFrom: String?)
-    fun removeLayout(id: String)
-    fun resetLayout(id: String)
 
     /** Re-reads the health data source. */
     fun refresh()

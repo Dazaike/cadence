@@ -253,7 +253,7 @@ private fun MainShell(
     val app = LocalContext.current.applicationContext as CadenceApp
     val vm: AppViewModel = viewModel(
         key = source.name,
-        factory = AppViewModel.factory(manager, if (source == DataSource.SAMSUNG_HEALTH) app.samsungWake else null, app.appPrefs, deps.unitPrefs, deps.goalsRepo, deps.dashboardLayout),
+        factory = AppViewModel.factory(manager, if (source == DataSource.SAMSUNG_HEALTH) app.samsungWake else null, app.status, app.appPrefs, deps.unitPrefs, deps.goalsRepo, deps.dashboardLayout),
     )
     val services = remember(manager, source, onManagePermissions) {
         AppServices(
