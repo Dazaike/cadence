@@ -156,7 +156,7 @@ fun OverviewPage() {
                             Box(Modifier.width(cardWidth).fillMaxHeight()) {
                                 CadenceCard(
                                     modifier = Modifier.fillMaxHeight(),
-                                    title = w.title, icon = w.icon, color = w.color, info = w.info, expandable = true,
+                                    title = w.title, icon = w.icon, color = w.color, info = w.info,
                                     actions = if (!editing) null else ({
                                         SizeChip(size) { update { l -> l.copy(sizes = l.sizes + (cell.id to size.next)) } }
                                         MiniAction(Icons.Rounded.VisibilityOff, "Hide widget") { update { l -> l.copy(hidden = l.hidden + cell.id) } }

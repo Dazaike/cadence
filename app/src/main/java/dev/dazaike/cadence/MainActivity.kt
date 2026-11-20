@@ -63,8 +63,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
+        (application as CadenceApp).samsungWake.activity = this
         // Opening the app counts as a sync trigger (throttled and gated on sign-in inside).
         lifecycleScope.launch { (application as CadenceApp).cloudSync.syncOnOpen() }
+    }
+
+    override fun onStop() {
+        (application as CadenceApp).samsungWake.let { if (it.activity === this) it.activity = null }
+        super.onStop()
     }
 
     override fun onNewIntent(intent: Intent) {

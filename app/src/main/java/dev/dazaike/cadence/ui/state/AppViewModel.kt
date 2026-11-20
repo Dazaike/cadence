@@ -45,7 +45,7 @@ private val GOAL_METRICS = mapOf(
  */
 class AppViewModel(
     private val source: HealthDataSource,
-    private val samsungWake: SamsungHealthWake,
+    private val samsungWake: SamsungHealthWake?,
     private val appPrefs: AppPreferences,
     private val unitPrefs: UnitPreferences,
     private val goalsRepo: GoalsRepository,
@@ -70,16 +70,20 @@ class AppViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     init {
-        refresh(userInitiated = false)
+        // Cold start: let Samsung Health pull from the watch first (no-op for Health Connect).
+        refresh(wake = true)
     }
 
-    /** Reads the data source again. [userInitiated] first wakes Samsung Health so its data is current. */
-    fun refresh(userInitiated: Boolean = true) {
+    /**
+     * Reads the data source again. [wake] first opens Samsung Health briefly so it syncs the watch;
+     * user-initiated refreshes skip that when it already ran in the last [WAKE_INTERVAL_MS].
+     */
+    fun refresh(userInitiated: Boolean = true, wake: Boolean = userInitiated) {
         if (_refreshing.value) return
         viewModelScope.launch {
             _refreshing.value = true
             try {
-                if (userInitiated) runCatching { samsungWake.wakeAndSettle() }
+                if (wake) runCatching { samsungWake?.wake(minIntervalMs = if (userInitiated) WAKE_INTERVAL_MS else 0L) }
                 _loaded.value = HealthViewLoader.load(source) { partial -> _loaded.value = partial }
             } finally {
                 _refreshing.value = false
@@ -90,7 +94,7 @@ class AppViewModel(
     /** Called when the app returns to the foreground: re-read when the view is over a minute old. */
     fun refreshIfStale() {
         val at = _loaded.value?.loadedAt ?: return
-        if (System.currentTimeMillis() - at > STALE_MS) refresh(userInitiated = false)
+        if (System.currentTimeMillis() - at > STALE_MS) refresh(userInitiated = false, wake = false)
     }
 
     fun selectDay(day: LocalDate?) {
@@ -132,10 +136,11 @@ class AppViewModel(
 
     companion object {
         private const val STALE_MS = 60_000L
+        private const val WAKE_INTERVAL_MS = 60_000L
 
         fun factory(
             source: HealthDataSource,
-            samsungWake: SamsungHealthWake,
+            samsungWake: SamsungHealthWake?,
             appPrefs: AppPreferences,
             unitPrefs: UnitPreferences,
             goalsRepo: GoalsRepository,

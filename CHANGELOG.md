@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+- Samsung Health: opening Cadence (and refreshing, at most once a minute) now brings Samsung Health to the front for about 8 seconds so it syncs from the watch, then returns to Cadence and loads. This only runs while Cadence is on screen, because Android blocks one app from opening another from the background. The old wake only connected to the SDK and never opened the app.
+
+### Changed
+- Overview widgets no longer have a full-screen button.
+
 ## [v2.0.0] - 2026-11-19
 
 ### Changed
