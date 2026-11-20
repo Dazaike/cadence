@@ -22,7 +22,7 @@ Implement `SamsungHealthManager` and its vendored build dependency exactly as sp
 - `gradle/libs.versions.toml`
 - `app/gradle.lockfile`
 - `app/src/main/AndroidManifest.xml`
-- `app/src/main/java/dev/easonhuang/heartwood/samsung/SamsungHealthManager.kt` (new)
+- `app/src/main/java/dev/dazaike/cadence/samsung/SamsungHealthManager.kt` (new)
 
 ## SDK source
 

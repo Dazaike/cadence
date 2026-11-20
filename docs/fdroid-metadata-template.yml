@@ -1,5 +1,5 @@
-# Heartwood recipe for the fdroiddata repo. Copy to
-# metadata/dev.easonhuang.heartwood.yml in a fork of fdroiddata and open a merge request.
+# Cadence recipe for the fdroiddata repo. Copy to
+# metadata/dev.dazaike.cadence.yml in a fork of fdroiddata and open a merge request.
 
 Categories:
   - Health & Fitness
@@ -14,18 +14,20 @@ Repo: https://github.com/GuyOnWifi/heartwood.git
 
 # Reproducible builds: F-Droid builds from source, downloads your signed APK from this URL for
 # the same version, and if they match byte-for-byte it ships YOUR signed APK. The release
-# workflow uploads heartwood-v<versionName>.apk to the GitHub Release for tag v<versionName>,
+# workflow uploads cadence-v<versionName>.apk to the GitHub Release for tag v<versionName>,
 # so %v (versionName) fills both slots.
-Binaries: https://github.com/GuyOnWifi/heartwood/releases/download/v%v/heartwood-v%v.apk
+Binaries: https://github.com/GuyOnWifi/heartwood/releases/download/v%v/cadence-v%v.apk
 
+# NOTE: the pin below is the key that signed the pre-rename builds. The application id changed
+# to dev.dazaike.cadence, so it MUST be re-pinned to the new release key before submitting.
 # SHA-256 of YOUR real signing certificate, lowercase hex, no colons. Pin it so F-Droid only
 # trusts APKs from the Binaries URL that are signed by your key. Get it from a signed APK:
-#   apksigner verify --print-certs heartwood-v1.0.0.apk | grep -i SHA-256
+#   apksigner verify --print-certs cadence-v1.0.0.apk | grep -i SHA-256
 # or from the keystore:
-#   keytool -list -v -keystore heartwood-release.jks -alias <alias> | grep SHA256
+#   keytool -list -v -keystore cadence-release.jks -alias <alias> | grep SHA256
 # then strip the colons and lowercase it.
 AllowedAPKSigningKeys:
-  - bb25e066722c1bafe1960fa11f17e8ebd3d648a5feca012a1266e5e4c17ff519
+  - bb25e066722c1bafe1960fa11f17e8ebd3d648a5feca012a1266e5e4c17ff519 # re-pin to the new release key
 
 Builds:
   - versionName: 1.0.0

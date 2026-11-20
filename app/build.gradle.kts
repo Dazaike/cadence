@@ -17,14 +17,14 @@ val keystoreProps = Properties().apply {
 fun signingValue(prop: String, env: String): String? =
     keystoreProps.getProperty(prop) ?: System.getenv(env)
 
-val hasSigning = signingValue("storeFile", "HEARTWOOD_STORE_FILE") != null
+val hasSigning = signingValue("storeFile", "CADENCE_STORE_FILE") != null
 
 android {
-    namespace = "dev.easonhuang.heartwood"
+    namespace = "dev.dazaike.cadence"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "dev.easonhuang.heartwood"
+        applicationId = "dev.dazaike.cadence"
         minSdk = 30
         targetSdk = 36
         versionCode = 3
@@ -35,10 +35,10 @@ android {
     signingConfigs {
         if (hasSigning) {
             create("release") {
-                storeFile = file(signingValue("storeFile", "HEARTWOOD_STORE_FILE")!!)
-                storePassword = signingValue("storePassword", "HEARTWOOD_STORE_PASSWORD")
-                keyAlias = signingValue("keyAlias", "HEARTWOOD_KEY_ALIAS")
-                keyPassword = signingValue("keyPassword", "HEARTWOOD_KEY_PASSWORD")
+                storeFile = file(signingValue("storeFile", "CADENCE_STORE_FILE")!!)
+                storePassword = signingValue("storePassword", "CADENCE_STORE_PASSWORD")
+                keyAlias = signingValue("keyAlias", "CADENCE_KEY_ALIAS")
+                keyPassword = signingValue("keyPassword", "CADENCE_KEY_PASSWORD")
             }
         }
     }

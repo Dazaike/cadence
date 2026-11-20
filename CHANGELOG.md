@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- Renamed the app from Heartwood to **Cadence**. New application id `dev.dazaike.cadence`, so this installs as a separate app (no data migration; set up and sign in again). Export files are now `cadence-export.*` with a `Cadence Health Data Export` header. The default cloud server address is unchanged.
+
 ## [v1.1.0] - 2026-11-18
 
 ### Added

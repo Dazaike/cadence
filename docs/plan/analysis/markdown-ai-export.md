@@ -11,11 +11,11 @@ Add `MARKDOWN` as a third local-file export format. Existing Health Connect read
 | `data/ExportManager` | granted metrics, range, `ExportFormat`, Health Connect series/dashboard, goals | streamed CSV, JSON, or AI-oriented Markdown | `HealthConnectManager`, `GoalsRepository`, `GoalCatalog`, formatting helpers |
 | `ui/settings/ExportDialog` | granted metrics, range, selected format | effective metrics/range/format | `ExportFormat` |
 | `ui/settings/SettingsScreen` | export selection | SAF `CreateDocument` launch and export invocation | `ExportDialog`, `ExportManager` |
-| `HeartwoodApp` | application dependencies | fully constructed exporter | `GoalsRepository` |
+| `CadenceApp` | application dependencies | fully constructed exporter | `GoalsRepository` |
 
 ## Integration enumeration
 
-1. `HeartwoodApp` creates `ExportManager` with `HealthConnectManager` and `GoalsRepository`.
+1. `CadenceApp` creates `ExportManager` with `HealthConnectManager` and `GoalsRepository`.
 2. `SettingsScreen` receives that exporter and invokes `ExportManager.export` after the corresponding SAF launcher returns a URI.
 3. Markdown selection sends all granted metrics rather than the dialog's checkbox state, and uses a Markdown MIME type and `.md` filename.
 4. `ExportManager` reads the selected-range per-metric export rows, a fixed 14-day goal comparison, and the current granted dashboard snapshot; it streams those into the selected URI.

@@ -1,5 +1,7 @@
 # Cloud sync: how the pieces fit
 
+> The product was renamed from Heartwood to Cadence. The backend hostname (`heartwood-api.dazaike.workers.dev`) and the GitHub repository URLs below still carry the old name until the Worker and repos are renamed.
+
 Cloud sync is optional. Without signing in, the app never touches the network.
 
 ```

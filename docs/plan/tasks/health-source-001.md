@@ -17,9 +17,9 @@ Introduce the compile-safe, behavior-preserving source abstraction required for 
 
 ## path
 
-- `app/src/main/java/dev/easonhuang/heartwood/data/HealthDataSource.kt` (new)
-- `app/src/main/java/dev/easonhuang/heartwood/data/DataSourcePreferences.kt` (new)
-- `app/src/main/java/dev/easonhuang/heartwood/data/HealthConnectManager.kt`
+- `app/src/main/java/dev/dazaike/cadence/data/HealthDataSource.kt` (new)
+- `app/src/main/java/dev/dazaike/cadence/data/DataSourcePreferences.kt` (new)
+- `app/src/main/java/dev/dazaike/cadence/data/HealthConnectManager.kt`
 
 ## change
 

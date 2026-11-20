@@ -13,14 +13,14 @@ The official Samsung Health Data SDK 1.1.0 archive is now available at `C:/Users
 | Module | Inputs | Outputs | Depends on |
 |---|---|---|---|
 | Data-source foundation | Existing metrics/models and Android Context | `HealthDataSource`; persisted `DataSource` selection; unchanged Health Connect behavior | none |
-| Samsung SDK adapter | Vendored Samsung AAR and exact aggregate API | `SamsungHealthManager`, permissions, Samsung-to-Heartwood mappings | data-source foundation, AAR |
+| Samsung SDK adapter | Vendored Samsung AAR and exact aggregate API | `SamsungHealthManager`, permissions, Samsung-to-Cadence mappings | data-source foundation, AAR |
 | Application integration | Both concrete managers and preferences | selection UI, source-specific onboarding, widgets/MCP active source routing | adapter |
 
 ## Integration chains
 
-1. `MainActivity` creates app dependencies → `HeartwoodRoot` selects the source → source-specific onboarding invokes the matching permission flow → `MainNav` and all screens consume `HealthDataSource`.
-2. `SettingsScreen` persists a `DataSource` → `HeartwoodRoot` observes it and remounts the active flow.
-3. Widget workers and `McpServerService` call `HeartwoodApp.activeDataSource()` → the selected manager supplies dashboard/export reads.
+1. `MainActivity` creates app dependencies → `CadenceRoot` selects the source → source-specific onboarding invokes the matching permission flow → `MainNav` and all screens consume `HealthDataSource`.
+2. `SettingsScreen` persists a `DataSource` → `CadenceRoot` observes it and remounts the active flow.
+3. Widget workers and `McpServerService` call `CadenceApp.activeDataSource()` → the selected manager supplies dashboard/export reads.
 4. `SamsungHealthManager` maps the 14 supported metrics to Samsung data types; the four unsupported metrics return the fixed locked caption without querying the SDK.
 5. `ExportManager` resolves the active source when an export begins, rather than retaining the startup `HealthConnectManager`; toggling data source must change exports as well as UI, widgets, and MCP.
 

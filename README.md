@@ -1,8 +1,12 @@
-# Heartwood
+# Cadence
 
-Your health data is already on your phone. Heartwood lets you see it without gifting it to an ad network or a venture-backed "wellness platform" that will eventually email you about mindfulness. If you *want* it on a web dashboard or in front of an AI assistant, there is an optional cloud sync you have to sign in to first.
+Your health data is already on your phone. Cadence lets you see it without gifting it to an ad network or a venture-backed "wellness platform" that will eventually email you about mindfulness. If you *want* it on a web dashboard or in front of an AI assistant, there is an optional cloud sync you have to sign in to first.
 
-Heartwood is a private, **read-only** Android viewer for [Health Connect](https://developer.android.com/health-connect) and, if you insist on Samsung's ecosystem, Samsung Health. It reads the data already on your device and renders it properly. It sends none of it anywhere unless you sign in to the optional cloud sync.
+Cadence is a private, **read-only** Android viewer for [Health Connect](https://developer.android.com/health-connect) and, if you insist on Samsung's ecosystem, Samsung Health. It reads the data already on your device and renders it properly. It sends none of it anywhere unless you sign in to the optional cloud sync.
+
+> **Origin.** Cadence began as a fork of [GuyOnWifi/heartwood](https://github.com/GuyOnWifi/heartwood) (GPL-3.0). The GPL obligations and the upstream copyright notices stay.
+>
+> **Naming note.** The project was renamed from Heartwood to Cadence. The deployed backend hostname (`heartwood-api.dazaike.workers.dev`) and the repository URLs still carry the old name until the Worker and repos are renamed or redeployed. The default server address in the app is unchanged on purpose.
 
 > No ads. No trackers. No analytics. Nothing leaves your device until you choose to sign in to cloud sync. Revolutionary, apparently.
 
@@ -17,7 +21,7 @@ Heartwood is a private, **read-only** Android viewer for [Health Connect](https:
 - **Customizable dashboard**, reorder metric tiles and hide the noise. Your Today view, not a product manager's.
 - **Samsung Health** *(optional)*, read directly from the Samsung Health app on-device instead of Health Connect.
 - **Local AI server (MCP)** *(optional)*, an opt-in loopback Model Context Protocol server for local LLMs and tools. `localhost` only. Unchanged by cloud sync: it never leaves the device and does not use an account.
-- **Cloud sync** *(optional, off until you sign in)*, create an account or sign in from Settings > Cloud sync and Heartwood uploads your readings (and goals) to a Heartwood cloud server so you can see them on the web dashboard and let ChatGPT, Claude or another AI assistant read them through the cloud's remote MCP server. Details below.
+- **Cloud sync** *(optional, off until you sign in)*, create an account or sign in from Settings > Cloud sync and Cadence uploads your readings (and goals) to a Cadence cloud server so you can see them on the web dashboard and let ChatGPT, Claude or another AI assistant read them through the cloud's remote MCP server. Details below.
 
 ## The boringly competent stack
 
@@ -52,7 +56,7 @@ You need JDK 17 and the Android SDK (`platforms;android-36`, `build-tools;36.0.0
 
 ### Sign a release, if you must
 
-Create `keystore.properties` (already gitignored) or provide the equivalent `HEARTWOOD_*` environment variables:
+Create `keystore.properties` (already gitignored) or provide the equivalent `CADENCE_*` environment variables:
 
 ```properties
 storeFile=/path/to/release.jks
@@ -74,12 +78,12 @@ Store descriptions and changelogs in `fastlane/metadata/android/en-US/`. The `fd
 
 ## Privacy: the entire point
 
-Heartwood requests only **read** permissions on your health data. You decide which types it can read and can revoke them whenever you like.
+Cadence requests only **read** permissions on your health data. You decide which types it can read and can revoke them whenever you like.
 
 **Out of the box, nothing is transmitted.** There are no accounts, no analytics and no trackers. The app declares the `INTERNET` permission, but it is only used by the two opt-in features below.
 
 - **Local AI server (MCP)**, opt-in, listens strictly on loopback (`127.0.0.1`). No account, no cloud.
-- **Cloud sync**, opt-in, and does nothing until you sign in (Settings > Cloud sync). After you sign in, Heartwood uploads your health readings (steps, distance, energy, floors, exercise, hydration, hourly average heart rate, resting heart rate, HRV, sleep sessions with stages, SpO₂, respiratory rate, VO₂ max, weight, height, blood pressure, blood glucose) and your goals over HTTPS to the server address shown in Settings (default `https://heartwood-api.dazaike.workers.dev`, editable; plain HTTP is accepted only for `localhost`). Signing out stops syncing and forgets the session on the phone; data already uploaded stays in your cloud account until you delete it from the dashboard. Heartwood stays read-only against Health Connect, and cloud sync never writes to it.
+- **Cloud sync**, opt-in, and does nothing until you sign in (Settings > Cloud sync). After you sign in, Cadence uploads your health readings (steps, distance, energy, floors, exercise, hydration, hourly average heart rate, resting heart rate, HRV, sleep sessions with stages, SpO₂, respiratory rate, VO₂ max, weight, height, blood pressure, blood glucose) and your goals over HTTPS to the server address shown in Settings (default `https://heartwood-api.dazaike.workers.dev`, editable; plain HTTP is accepted only for `localhost`). Signing out stops syncing and forgets the session on the phone; data already uploaded stays in your cloud account until you delete it from the dashboard. Cadence stays read-only against Health Connect, and cloud sync never writes to it.
 
 ### Cloud sync details
 
