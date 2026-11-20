@@ -266,3 +266,6 @@ internal fun runs(values: List<Double?>): List<IntRange> {
     if (start >= 0) out.add(start until values.size)
     return out
 }
+
+/** `coerceIn` that never throws: when the plot is narrower than the label (empty range) the label is centered instead. */
+internal fun Float.clampLabel(lo: Float, hi: Float): Float = if (lo > hi) (lo + hi) / 2f else coerceIn(lo, hi)

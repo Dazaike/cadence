@@ -115,11 +115,11 @@ fun CadenceTheme(
             colorScheme = scheme,
             typography = materialTypography(type),
             shapes = Shapes(
-                extraSmall = RoundedCornerShape(8.dp),
-                small = RoundedCornerShape(12.dp),
-                medium = RoundedCornerShape(12.dp),
-                large = RoundedCornerShape(16.dp),
-                extraLarge = RoundedCornerShape(24.dp),
+                extraSmall = RoundedCornerShape(12.dp),
+                small = RoundedCornerShape(16.dp),
+                medium = RoundedCornerShape(16.dp),
+                large = RoundedCornerShape(24.dp),
+                extraLarge = RoundedCornerShape(32.dp),
             ),
             content = content,
         )

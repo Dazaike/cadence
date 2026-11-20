@@ -117,7 +117,7 @@ fun DayTimeline(
         val tickLabels = TICKS.map { fmtClock(it).replace(":00", "") }
         val half = measurer.widest(tickLabels, axis) / 2f
         TICKS.forEachIndexed { i, t ->
-            label(measurer, tickLabels[i], axis, x(t).coerceIn(plot.left + half, plot.right - half), plot.bottom + 4.dp.toPx(), TextAlign.Center)
+            label(measurer, tickLabels[i], axis, x(t).clampLabel(plot.left + half, plot.right - half), plot.bottom + 4.dp.toPx(), TextAlign.Center)
         }
 
         // heart-rate line + dots

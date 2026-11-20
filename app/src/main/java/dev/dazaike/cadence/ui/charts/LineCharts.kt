@@ -119,7 +119,7 @@ fun TrendChart(
                 val widest = measurer.widest(vis.map { it.label }.distinct().take(40), axis)
                 val idx = labelIndices(vis.size, plot.w, widest)
                 idx.forEach { i ->
-                    val x = plot.xAt(i, vis.size, false).coerceIn(plot.left + widest / 2, plot.right - widest / 2)
+                    val x = plot.xAt(i, vis.size, false).clampLabel(plot.left + widest / 2, plot.right - widest / 2)
                     label(measurer, vis[i].label, axis, x, plot.bottom + 4.dp.toPx(), TextAlign.Center)
                 }
             }
@@ -217,7 +217,7 @@ internal fun BrushBar(values: List<Double?>, color: Color, start: Int, end: Int,
                         3 -> {
                             val shift = Math.round(drag.x / size.width * (n - 1))
                             val span = endNow - startNow
-                            val ns = (startNow + shift).coerceIn(0, n - 1 - span)
+                            val ns = (startNow + shift).coerceIn(0, (n - 1 - span).coerceAtLeast(0))
                             onChangeNow(ns, ns + span)
                         }
                     }
@@ -318,7 +318,7 @@ fun RangeChart(
             if (vis.isNotEmpty()) {
                 val widest = measurer.widest(vis.map { it.label }.distinct().take(40), axis)
                 labelIndices(vis.size, plot.w, widest).forEach { i ->
-                    val x = plot.xAt(i, vis.size, false).coerceIn(plot.left + widest / 2, plot.right - widest / 2)
+                    val x = plot.xAt(i, vis.size, false).clampLabel(plot.left + widest / 2, plot.right - widest / 2)
                     label(measurer, vis[i].label, axis, x, plot.bottom + 4.dp.toPx(), TextAlign.Center)
                 }
             }

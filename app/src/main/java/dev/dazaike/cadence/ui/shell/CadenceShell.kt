@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -39,8 +40,8 @@ import androidx.compose.material.icons.rounded.BrightnessAuto
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.MoreHoriz
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -232,6 +233,7 @@ private fun Page(ctx: AppCtx?, route: Route, refreshing: Boolean, vm: AppViewMod
 /* Phone: floating bottom bar                                          */
 /* ------------------------------------------------------------------ */
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BottomBar(route: Route, onRoute: (Route) -> Unit, modifier: Modifier) {
     val c = Cadence.colors
@@ -257,24 +259,45 @@ private fun BottomBar(route: Route, onRoute: (Route) -> Unit, modifier: Modifier
                     .offset { IntOffset(x.roundToInt(), 0) }
                     .width(itemWidth)
                     .height(BAR_HEIGHT - 12.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(22.dp))
                     .background(c.pageBg),
             )
             Row(Modifier.fillMaxWidth()) {
                 Route.TABS.forEach { r -> BarItem(r.label, r.icon, route == r, Modifier.weight(1f)) { onRoute(r) } }
-                Box(Modifier.weight(1f)) {
-                    BarItem("More", Icons.Rounded.MoreHoriz, route in Route.MORE, Modifier.fillMaxWidth()) { more = true }
-                    DropdownMenu(expanded = more, onDismissRequest = { more = false }, containerColor = c.card, shape = RoundedCornerShape(Dimens.ControlRadius)) {
-                        Route.MORE.forEach { r ->
-                            DropdownMenuItem(
-                                text = { Text(r.label, style = Cadence.type.bodyMedium, color = if (route == r) c.accentStrong else c.textPrimary) },
-                                leadingIcon = { Icon(r.icon, null, tint = if (route == r) c.accentStrong else c.iconSecondary, modifier = Modifier.size(18.dp)) },
-                                onClick = {
-                                    more = false
-                                    onRoute(r)
-                                },
-                            )
-                        }
+                BarItem("More", Icons.Rounded.MoreHoriz, route in Route.MORE, Modifier.weight(1f)) { more = true }
+            }
+        }
+    }
+
+    if (more) {
+        ModalBottomSheet(
+            onDismissRequest = { more = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = c.card,
+            contentColor = c.textPrimary,
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        ) {
+            Column(
+                Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp).padding(bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Route.MORE.forEach { r ->
+                    val active = route == r
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(if (active) c.pageBg else Color.Transparent)
+                            .clickable(role = Role.Button) {
+                                more = false
+                                onRoute(r)
+                            }
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(r.icon, null, tint = if (active) c.accentStrong else c.iconSecondary, modifier = Modifier.size(22.dp))
+                        Spacer(Modifier.width(16.dp))
+                        Text(r.label, style = Cadence.type.bodyMedium, color = if (active) c.accentStrong else c.textPrimary)
                     }
                 }
             }
@@ -285,17 +308,18 @@ private fun BottomBar(route: Route, onRoute: (Route) -> Unit, modifier: Modifier
 @Composable
 private fun BarItem(label: String, icon: ImageVector, active: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val c = Cadence.colors
-    Column(
+    Box(
         modifier
             .height(BAR_HEIGHT - 12.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(22.dp))
             .clickable(role = Role.Tab, onClick = onClick)
-            .semantics { selected = active },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+            .semantics {
+                selected = active
+                contentDescription = label
+            },
+        contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, null, tint = if (active) c.accentStrong else c.textSecondary, modifier = Modifier.size(20.dp))
-        Text(label, style = Cadence.type.caption2Medium, color = if (active) c.textPrimary else c.textSecondary, maxLines = 1)
+        Icon(icon, null, tint = if (active) c.accentStrong else c.textSecondary, modifier = Modifier.size(24.dp))
     }
 }
 

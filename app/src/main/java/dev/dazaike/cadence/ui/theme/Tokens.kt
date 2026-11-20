@@ -160,9 +160,9 @@ object ZoneColors {
 
 /** Layout constants shared by the pages (web `rounded-3xl`, `rounded-xl`, spacing scale). */
 object Dimens {
-    val CardRadius: Dp = 24.dp
-    val InnerRadius: Dp = 16.dp // rounded-2xl
-    val ControlRadius: Dp = 12.dp // rounded-xl
+    val CardRadius: Dp = 32.dp
+    val InnerRadius: Dp = 20.dp
+    val ControlRadius: Dp = 16.dp
     val CardPadding: Dp = 20.dp // p-5
     val PageGap: Dp = 20.dp // gap-5
     val PageHPad: Dp = 16.dp

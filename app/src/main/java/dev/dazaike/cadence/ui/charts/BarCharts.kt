@@ -88,7 +88,7 @@ private fun BarFrame(
         if (count > 0) {
             val widest = measurer.widest(xLabels.distinct().take(40), axis)
             labelIndices(count, plot.w, widest).forEach { i ->
-                val x = (plot.xAt(i, count, true)).coerceIn(plot.left + widest / 2, plot.right - widest / 2)
+                val x = (plot.xAt(i, count, true)).clampLabel(plot.left + widest / 2, plot.right - widest / 2)
                 label(measurer, xLabels[i], axis, x, plot.bottom + 4.dp.toPx(), TextAlign.Center)
             }
         }
