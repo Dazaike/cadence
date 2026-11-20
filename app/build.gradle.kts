@@ -78,6 +78,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        aidl = true
     }
     packaging {
         resources {
@@ -114,6 +115,8 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.nanohttpd)
+    implementation(libs.shizuku.api)
+    implementation(libs.shizuku.provider)
     implementation(files("libs/samsung-health-data-api.aar"))
     implementation("com.google.code.gson:gson:2.13.2")
     testImplementation(libs.junit)

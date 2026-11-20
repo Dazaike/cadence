@@ -17,6 +17,7 @@ import dev.dazaike.cadence.data.WidgetPreferences
 import dev.dazaike.cadence.data.UnitPreferences
 import dev.dazaike.cadence.samsung.SamsungHealthManager
 import dev.dazaike.cadence.samsung.SamsungHealthWake
+import dev.dazaike.cadence.samsung.ShizukuWake
 import dev.dazaike.cadence.widget.WidgetUpdateScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +29,8 @@ class CadenceApp : Application() {
     val healthConnect: HealthConnectManager by lazy { HealthConnectManager(this) }
     val appPrefs: AppPreferences by lazy { AppPreferences(this) }
     val samsungHealth: SamsungHealthManager by lazy { SamsungHealthManager(this) }
-    val samsungWake: SamsungHealthWake by lazy { SamsungHealthWake(this) }
+    val shizukuWake: ShizukuWake by lazy { ShizukuWake(this) }
+    val samsungWake: SamsungHealthWake by lazy { SamsungHealthWake(this, shizukuWake) }
     val dataSourcePrefs: DataSourcePreferences by lazy { DataSourcePreferences(this) }
     val goals: GoalsRepository by lazy { GoalsRepository(this) }
     val exporter: ExportManager by lazy { ExportManager(this, ::activeDataSource, goals, unitPrefs) }

@@ -12,14 +12,16 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * Samsung Health only pulls new data from the watch while its own app is running, and it has no
- * public "sync now" API. So before reading, Cadence briefly brings Samsung Health to the front,
- * waits for it to sync, then returns to itself.
+ * Samsung Health only pulls new data from the watch while one of its screens is running, and it has
+ * no public "sync now" API. So before reading, Cadence makes it sync:
  *
- * Android only lets an app start another app's screen while it is itself visible, so this does
- * nothing when Cadence is in the background ([activity] is maintained by [MainActivity]).
+ *  1. With Shizuku allowed, [ShizukuWake] runs Samsung Health on a hidden display: nothing shows on
+ *     screen, and it works while Cadence is in the background.
+ *  2. Otherwise Samsung Health is briefly brought to the front for [SETTLE_MS] and Cadence returns.
+ *     Android only lets an app open another app while it is itself visible, so this does nothing
+ *     when Cadence is in the background ([activity] is maintained by [MainActivity]).
  */
-class SamsungHealthWake(private val context: Context) {
+class SamsungHealthWake(private val context: Context, private val shizuku: ShizukuWake) {
     private val mutex = Mutex()
     private var lastWakeElapsed = 0L
 
@@ -28,18 +30,37 @@ class SamsungHealthWake(private val context: Context) {
     var activity: Activity? = null
 
     /**
-     * Launches Samsung Health, gives it [SETTLE_MS] to sync from the watch, and brings Cadence back.
-     * Skipped (returns false) when Cadence isn't visible, Samsung Health isn't installed, or it was
-     * woken less than [minIntervalMs] ago.
+     * Makes Samsung Health sync from the watch. Skipped (returns false) when it was woken less than
+     * [minIntervalMs] ago, when Samsung Health isn't installed, or when the only available method
+     * (a visible bounce) can't run because Cadence isn't on screen.
      */
     suspend fun wake(minIntervalMs: Long = 0L): Boolean = mutex.withLock {
+        if (tooSoon(minIntervalMs)) return false
         val app = context.applicationContext
-        val host = activity ?: return false
-        val sinceLast = SystemClock.elapsedRealtime() - lastWakeElapsed
-        if (lastWakeElapsed != 0L && sinceLast < minIntervalMs) return false
         val launch = runCatching { app.packageManager.getLaunchIntentForPackage(SHEALTH_PACKAGE) }.getOrNull()
             ?: return false
 
+        val silent = shizuku.syncSilently()
+        if (silent != null) {
+            lastWakeElapsed = SystemClock.elapsedRealtime()
+            return silent
+        }
+        bounce(app, launch)
+    }
+
+    /** The hidden-display method only: safe to call from a background job, never shows anything. */
+    suspend fun wakeSilently(minIntervalMs: Long): Boolean = mutex.withLock {
+        if (tooSoon(minIntervalMs)) return false
+        val result = shizuku.syncSilently() ?: return false
+        lastWakeElapsed = SystemClock.elapsedRealtime()
+        result
+    }
+
+    private fun tooSoon(minIntervalMs: Long): Boolean =
+        lastWakeElapsed != 0L && SystemClock.elapsedRealtime() - lastWakeElapsed < minIntervalMs
+
+    private suspend fun bounce(app: Context, launch: Intent): Boolean {
+        val host = activity ?: return false
         // Opened inside Cadence's own task (no NEW_TASK) so Cadence stays in the foreground task's
         // back stack, which is what lets it bring itself back afterwards.
         launch.flags = 0
@@ -51,7 +72,7 @@ class SamsungHealthWake(private val context: Context) {
         lastWakeElapsed = SystemClock.elapsedRealtime()
         delay(SETTLE_MS)
         returnToCadence(app)
-        true
+        return true
     }
 
     private fun returnToCadence(app: Context) {
@@ -68,7 +89,9 @@ class SamsungHealthWake(private val context: Context) {
 
     companion object {
         const val SHEALTH_PACKAGE = "com.sec.android.app.shealth"
-        const val SETTLE_MS = 8_000L
+
+        // Samsung Health's watch sync finished 1 to 3 seconds after its home screen resumed.
+        const val SETTLE_MS = 5_000L
         private const val TAG = "SamsungHealthWake"
     }
 }

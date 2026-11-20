@@ -10,6 +10,7 @@ import dev.dazaike.cadence.data.KM_TO_MILES
 import dev.dazaike.cadence.data.LITERS_TO_FL_OZ
 import dev.dazaike.cadence.data.Metric
 import dev.dazaike.cadence.data.UnitSystem
+import dev.dazaike.cadence.CadenceApp
 import dev.dazaike.cadence.samsung.SamsungHealthManager
 import java.time.Instant
 import java.time.LocalDate
@@ -155,6 +156,11 @@ class CloudSyncManager(
     private suspend fun doSync(base: String, token: String): SyncOutcome {
         val source = activeSource()
         if (!source.isAvailable) return SyncOutcome.Failed("Health data source is not available on this device.", retry = false)
+        // Let Samsung Health pull the watch first, so this sync doesn't upload stale data. Only the
+        // hidden-display method runs here (no-op without Shizuku); it never shows anything on screen.
+        if (source is SamsungHealthManager) {
+            runCatching { (context.applicationContext as? CadenceApp)?.samsungWake?.wakeSilently(WAKE_INTERVAL_MS) }
+        }
         val granted = try {
             source.grantedPermissions()
         } catch (e: CancellationException) {
@@ -477,6 +483,7 @@ class CloudSyncManager(
         const val MAX_ABS_VALUE = 1e9
         const val MIN_PASSWORD = 10
         const val OPEN_THROTTLE_MS = 5 * 60_000L
+        private const val WAKE_INTERVAL_MS = 5 * 60_000L
         val EMAIL_PATTERN = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
     }
 }

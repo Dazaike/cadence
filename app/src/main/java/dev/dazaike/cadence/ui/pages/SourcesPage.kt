@@ -50,6 +50,14 @@ import dev.dazaike.cadence.ui.state.LocalApp
 import dev.dazaike.cadence.ui.theme.Cadence
 import dev.dazaike.cadence.ui.theme.tabular
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import dev.dazaike.cadence.CadenceApp
+import dev.dazaike.cadence.samsung.ShizukuWake
+import dev.dazaike.cadence.ui.components.ButtonKind
+import androidx.compose.material.icons.rounded.Sync
+import androidx.compose.ui.platform.LocalContext
+import android.content.Intent
+import android.net.Uri
 
 private fun DataSource.displayName(): String = when (this) {
     DataSource.HEALTH_CONNECT -> "Health Connect"
@@ -64,6 +72,7 @@ fun SourcesPage() {
         DatasetCard()
         ImportCard()
         PermissionsCard()
+        if (LocalApp.current.services.source == DataSource.SAMSUNG_HEALTH) SilentSyncCard()
         AdaptiveRow(listOf(1f, 1f), { CloudSyncCard() }, { ExportCard() })
         FreshnessCard()
     }
@@ -168,6 +177,87 @@ private fun PermissionsCard() {
             }
             Notice("Cadence only reads your health data. It never writes anything back to ${app.services.source.displayName()}.")
             CadenceButton("Manage data access", onClick = app.services.onManagePermissions, icon = Icons.Rounded.Lock)
+        }
+    }
+}
+
+private data class ShizukuCopy(val tone: PillTone, val pill: String, val text: String, val action: String?)
+
+private fun ShizukuWake.State.copy(): ShizukuCopy = when (this) {
+    ShizukuWake.State.NOT_INSTALLED -> ShizukuCopy(
+        PillTone.NEUTRAL, "Not set up",
+        "Samsung Health only syncs your watch while it is open, so Cadence has to open it before reading. With Shizuku it does that on a hidden screen: nothing flashes, and it also works in the background. Install Shizuku, start it, then allow Cadence.",
+        "Get Shizuku",
+    )
+    ShizukuWake.State.NOT_RUNNING -> ShizukuCopy(
+        PillTone.NEUTRAL, "Shizuku stopped",
+        "Shizuku is installed but not running. Open it and start the service (wireless debugging or root), then come back.",
+        "Open Shizuku",
+    )
+    ShizukuWake.State.NEEDS_PERMISSION -> ShizukuCopy(
+        PillTone.NEUTRAL, "Needs permission",
+        "Shizuku is running. Allow Cadence so it can open Samsung Health on a hidden screen to sync your watch. It uses that access for nothing else.",
+        "Allow in Shizuku",
+    )
+    ShizukuWake.State.DENIED -> ShizukuCopy(
+        PillTone.NEUTRAL, "Denied",
+        "Shizuku has Cadence set to deny. Open Shizuku, find Cadence under authorized apps and allow it.",
+        "Open Shizuku",
+    )
+    ShizukuWake.State.READY -> ShizukuCopy(
+        PillTone.LIME, "Active",
+        "Cadence syncs your watch through Samsung Health on a hidden screen before it reads, on open, on refresh and before each cloud sync. Nothing appears on screen.",
+        null,
+    )
+}
+
+@Composable
+private fun SilentSyncCard() {
+    val context = LocalContext.current
+    val c = Cadence.colors
+    val shizuku = remember { (context.applicationContext as CadenceApp).shizukuWake }
+    val wake = remember { (context.applicationContext as CadenceApp).samsungWake }
+    val scope = rememberCoroutineScope()
+    var state by remember { mutableStateOf(shizuku.state()) }
+    var testing by remember { mutableStateOf(false) }
+    var testResult by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            state = shizuku.state()
+            delay(1_500)
+        }
+    }
+    val copy = state.copy()
+    CadenceCard(title = "Silent Samsung Health sync", icon = Icons.Rounded.Sync, color = c.accent.c600, actions = { Pill(copy.pill, tone = copy.tone) }) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(copy.text, style = Cadence.type.bodyRegular, color = c.textSecondary)
+            if (copy.action != null) {
+                CadenceButton(copy.action, onClick = {
+                    when (state) {
+                        ShizukuWake.State.NOT_INSTALLED ->
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(ShizukuWake.SHIZUKU_URL)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        ShizukuWake.State.NEEDS_PERMISSION -> shizuku.requestPermission()
+                        else -> context.packageManager.getLaunchIntentForPackage(ShizukuWake.SHIZUKU_PACKAGE)
+                            ?.let { context.startActivity(it) }
+                    }
+                })
+            }
+            if (state == ShizukuWake.State.READY) {
+                CadenceButton(
+                    "Test silent sync",
+                    onClick = {
+                        scope.launch {
+                            testing = true
+                            testResult = null
+                            val ok = runCatching { wake.wakeSilently(0L) }.getOrDefault(false)
+                            testResult = if (ok) "Samsung Health synced your watch." else "No watch sync finished. Check that the watch is connected."
+                            testing = false
+                        }
+                    },
+                    kind = ButtonKind.SECONDARY, icon = Icons.Rounded.Sync, loading = testing,
+                )
+                testResult?.let { Notice(it) }
+            }
         }
     }
 }
