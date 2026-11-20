@@ -43,7 +43,8 @@ class ShellWakeService : IWakeService.Stub() {
         val worker = thread(name = "cadence-wake") {
             try {
                 if (Looper.myLooper() == null) {
-                    try { Looper.prepareMainLooper() } catch (_: Throwable) { Looper.prepare() }
+                    // prepareMainLooper() creates this thread's Looper before it notices a main one exists.
+                    try { Looper.prepareMainLooper() } catch (_: Throwable) { if (Looper.myLooper() == null) Looper.prepare() }
                 }
                 result = runSync(component, timeoutMs)
             } catch (t: Throwable) {
