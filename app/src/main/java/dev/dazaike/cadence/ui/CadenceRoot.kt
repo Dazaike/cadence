@@ -4,16 +4,6 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Insights
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.Today
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,53 +11,39 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.health.connect.client.PermissionController
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.samsung.android.sdk.health.data.error.AuthorizationException
 import com.samsung.android.sdk.health.data.error.ErrorCode
 import com.samsung.android.sdk.health.data.error.HealthDataException
-import kotlinx.coroutines.launch
-import androidx.health.connect.client.PermissionController
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
+import dev.dazaike.cadence.CadenceApp
 import dev.dazaike.cadence.cloud.CloudSyncManager
-import dev.dazaike.cadence.data.UnitPreferences
 import dev.dazaike.cadence.data.DashboardLayoutRepository
-import dev.dazaike.cadence.data.GoalsRepository
-import dev.dazaike.cadence.data.ExportManager
-import dev.dazaike.cadence.data.HealthConnectManager
 import dev.dazaike.cadence.data.DataSource
 import dev.dazaike.cadence.data.DataSourcePreferences
+import dev.dazaike.cadence.data.ExportManager
+import dev.dazaike.cadence.data.GoalsRepository
+import dev.dazaike.cadence.data.HealthConnectManager
 import dev.dazaike.cadence.data.HealthDataSource
-import dev.dazaike.cadence.mcp.McpServerPreferences
-import dev.dazaike.cadence.data.Metric
+import dev.dazaike.cadence.data.UnitPreferences
 import dev.dazaike.cadence.data.WidgetPreferences
+import dev.dazaike.cadence.mcp.McpServerPreferences
 import dev.dazaike.cadence.samsung.SamsungHealthManager
-import dev.dazaike.cadence.ui.dashboard.CustomizeDashboardScreen
-import dev.dazaike.cadence.ui.dashboard.DashboardScreen
-import dev.dazaike.cadence.ui.detail.DetailScreen
-import dev.dazaike.cadence.ui.onboarding.SamsungHealthErrorScreen
 import dev.dazaike.cadence.ui.onboarding.LoadingScreen
 import dev.dazaike.cadence.ui.onboarding.OnboardingScreen
+import dev.dazaike.cadence.ui.onboarding.SamsungHealthErrorScreen
 import dev.dazaike.cadence.ui.onboarding.UnavailableScreen
-import dev.dazaike.cadence.ui.settings.SettingsScreen
-import dev.dazaike.cadence.ui.summary.SummaryScreen
+import dev.dazaike.cadence.ui.shell.CadenceShell
+import dev.dazaike.cadence.ui.state.AppServices
+import dev.dazaike.cadence.ui.state.AppViewModel
+import kotlinx.coroutines.launch
 
 private const val HEALTH_CONNECT_PACKAGE = "com.google.android.apps.healthdata"
 private const val ACTION_HC_SETTINGS = "androidx.health.connect.action.HEALTH_CONNECT_SETTINGS"
 private const val ACTION_MANAGE_HEALTH_PERMISSIONS = "androidx.health.connect.action.MANAGE_HEALTH_PERMISSIONS"
-
-private enum class Dest(val route: String, val label: String, val icon: ImageVector) {
-    TODAY("today", "Today", Icons.Rounded.Today),
-    SUMMARY("summary", "Summary", Icons.Rounded.Insights),
-    SETTINGS("settings", "Settings", Icons.Rounded.Settings),
-}
 
 @Composable
 fun CadenceRoot(
@@ -85,49 +61,31 @@ fun CadenceRoot(
     onDeepLinkConsumed: () -> Unit = {},
 ) {
     val source by dataSourcePrefs.source.collectAsStateWithLifecycle(initialValue = DataSource.HEALTH_CONNECT)
+    val deps = MainDeps(goalsRepo, exporter, dashboardLayout, widgetPrefs, mcpPrefs, dataSourcePrefs, unitPrefs, cloudSync)
     when (source) {
-        DataSource.HEALTH_CONNECT -> HealthConnectRoot(
-            manager = healthConnect,
-            goalsRepo = goalsRepo,
-            exporter = exporter,
-            dashboardLayout = dashboardLayout,
-            widgetPrefs = widgetPrefs,
-            mcpPrefs = mcpPrefs,
-            dataSourcePrefs = dataSourcePrefs,
-            unitPrefs = unitPrefs,
-            cloudSync = cloudSync,
-            deepLinkMetric = deepLinkMetric,
-            onDeepLinkConsumed = onDeepLinkConsumed,
-        )
-        DataSource.SAMSUNG_HEALTH -> SamsungHealthRoot(
-            manager = samsungHealth,
-            goalsRepo = goalsRepo,
-            exporter = exporter,
-            dashboardLayout = dashboardLayout,
-            widgetPrefs = widgetPrefs,
-            mcpPrefs = mcpPrefs,
-            dataSourcePrefs = dataSourcePrefs,
-            unitPrefs = unitPrefs,
-            cloudSync = cloudSync,
-            deepLinkMetric = deepLinkMetric,
-            onDeepLinkConsumed = onDeepLinkConsumed,
-        )
+        DataSource.HEALTH_CONNECT -> HealthConnectRoot(healthConnect, deps, deepLinkMetric, onDeepLinkConsumed)
+        DataSource.SAMSUNG_HEALTH -> SamsungHealthRoot(samsungHealth, deps, deepLinkMetric, onDeepLinkConsumed)
     }
 }
+
+/** Everything the main shell needs besides the active data source. */
+private class MainDeps(
+    val goalsRepo: GoalsRepository,
+    val exporter: ExportManager,
+    val dashboardLayout: DashboardLayoutRepository,
+    val widgetPrefs: WidgetPreferences,
+    val mcpPrefs: McpServerPreferences,
+    val dataSourcePrefs: DataSourcePreferences,
+    val unitPrefs: UnitPreferences,
+    val cloudSync: CloudSyncManager,
+)
 
 @Composable
 private fun HealthConnectRoot(
     manager: HealthConnectManager,
-    goalsRepo: GoalsRepository,
-    exporter: ExportManager,
-    dashboardLayout: DashboardLayoutRepository,
-    widgetPrefs: WidgetPreferences,
-    mcpPrefs: McpServerPreferences,
-    dataSourcePrefs: DataSourcePreferences,
-    unitPrefs: UnitPreferences,
-    cloudSync: CloudSyncManager,
-    deepLinkMetric: String? = null,
-    onDeepLinkConsumed: () -> Unit = {},
+    deps: MainDeps,
+    deepLinkMetric: String?,
+    onDeepLinkConsumed: () -> Unit,
 ) {
     val context = LocalContext.current
 
@@ -204,36 +162,16 @@ private fun HealthConnectRoot(
     when {
         granted == null || inSetup -> LoadingScreen()
         !hasData -> OnboardingScreen(onConnect = ::startSetup)
-        else -> MainNav(
-            manager = manager,
-            goalsRepo = goalsRepo,
-            exporter = exporter,
-            dashboardLayout = dashboardLayout,
-            widgetPrefs = widgetPrefs,
-            mcpPrefs = mcpPrefs,
-            dataSourcePrefs = dataSourcePrefs,
-            unitPrefs = unitPrefs,
-            cloudSync = cloudSync,
-            onManagePermissions = ::manageAccess,
-            deepLinkMetric = deepLinkMetric,
-            onDeepLinkConsumed = onDeepLinkConsumed,
-        )
+        else -> MainShell(manager, DataSource.HEALTH_CONNECT, deps, ::manageAccess, deepLinkMetric, onDeepLinkConsumed)
     }
 }
 
 @Composable
 private fun SamsungHealthRoot(
     manager: SamsungHealthManager,
-    goalsRepo: GoalsRepository,
-    exporter: ExportManager,
-    dashboardLayout: DashboardLayoutRepository,
-    widgetPrefs: WidgetPreferences,
-    mcpPrefs: McpServerPreferences,
-    dataSourcePrefs: DataSourcePreferences,
-    unitPrefs: UnitPreferences,
-    cloudSync: CloudSyncManager,
-    deepLinkMetric: String? = null,
-    onDeepLinkConsumed: () -> Unit = {},
+    deps: MainDeps,
+    deepLinkMetric: String?,
+    onDeepLinkConsumed: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -281,20 +219,7 @@ private fun SamsungHealthRoot(
             onConnect = ::connect,
             sourceName = "Samsung Health",
         )
-        else -> MainNav(
-            manager = manager,
-            goalsRepo = goalsRepo,
-            exporter = exporter,
-            dashboardLayout = dashboardLayout,
-            widgetPrefs = widgetPrefs,
-            mcpPrefs = mcpPrefs,
-            dataSourcePrefs = dataSourcePrefs,
-            unitPrefs = unitPrefs,
-            cloudSync = cloudSync,
-            onManagePermissions = ::connect,
-            deepLinkMetric = deepLinkMetric,
-            onDeepLinkConsumed = onDeepLinkConsumed,
-        )
+        else -> MainShell(manager, DataSource.SAMSUNG_HEALTH, deps, ::connect, deepLinkMetric, onDeepLinkConsumed)
     }
 }
 
@@ -315,112 +240,32 @@ private fun platformErrorMessage(error: Throwable): String = when (error) {
     else -> "Samsung Health is unavailable. Please try again."
 }
 
+/** Builds the view model for the active data source (a source switch gets a fresh one) and hosts the shell. */
 @Composable
-private fun MainNav(
+private fun MainShell(
     manager: HealthDataSource,
-    goalsRepo: GoalsRepository,
-    exporter: ExportManager,
-    dashboardLayout: DashboardLayoutRepository,
-    widgetPrefs: WidgetPreferences,
-    mcpPrefs: McpServerPreferences,
-    dataSourcePrefs: DataSourcePreferences,
-    unitPrefs: UnitPreferences,
-    cloudSync: CloudSyncManager,
+    source: DataSource,
+    deps: MainDeps,
     onManagePermissions: () -> Unit,
-    deepLinkMetric: String? = null,
-    onDeepLinkConsumed: () -> Unit = {},
+    deepLinkMetric: String?,
+    onDeepLinkConsumed: () -> Unit,
 ) {
-    val navController = rememberNavController()
-    val backStack by navController.currentBackStackEntryAsState()
-    val currentRoute = backStack?.destination?.route
-    val topLevel = remember { Dest.entries.toList() }
-    val showBar = currentRoute in topLevel.map { it.route }
-
-    // Open a metric's detail directly when launched from its widget.
-    LaunchedEffect(deepLinkMetric) {
-        val metric = deepLinkMetric?.let { Metric.fromKey(it) }
-        if (metric != null) {
-            navController.navigate("detail/${metric.key}")
-            onDeepLinkConsumed()
-        }
+    val app = LocalContext.current.applicationContext as CadenceApp
+    val vm: AppViewModel = viewModel(
+        key = source.name,
+        factory = AppViewModel.factory(manager, app.samsungWake, app.appPrefs, deps.unitPrefs, deps.goalsRepo, deps.dashboardLayout),
+    )
+    val services = remember(manager, source, onManagePermissions) {
+        AppServices(
+            manager = manager,
+            exporter = deps.exporter,
+            cloudSync = deps.cloudSync,
+            mcpPrefs = deps.mcpPrefs,
+            widgetPrefs = deps.widgetPrefs,
+            dataSourcePrefs = deps.dataSourcePrefs,
+            source = source,
+            onManagePermissions = onManagePermissions,
+        )
     }
-
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            if (showBar) {
-                NavigationBar {
-                    topLevel.forEach { dest ->
-                        NavigationBarItem(
-                            selected = currentRoute == dest.route,
-                            onClick = {
-                                navController.navigate(dest.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { Icon(dest.icon, contentDescription = dest.label) },
-                            label = { Text(dest.label) },
-                        )
-                    }
-                }
-            }
-        },
-    ) { inner ->
-        val bottomInset = inner.calculateBottomPadding()
-        NavHost(
-            navController = navController,
-            startDestination = Dest.TODAY.route,
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            composable(Dest.TODAY.route) {
-                DashboardScreen(
-                    manager = manager,
-                    layoutRepo = dashboardLayout,
-                    unitPrefs = unitPrefs,
-                    bottomInset = bottomInset,
-                    onOpenMetric = { metric -> navController.navigate("detail/${metric.key}") },
-                    onManagePermissions = onManagePermissions,
-                    onCustomize = { navController.navigate("customize_dashboard") },
-                )
-            }
-            composable("customize_dashboard") {
-                CustomizeDashboardScreen(
-                    layoutRepo = dashboardLayout,
-                    bottomInset = bottomInset,
-                    onBack = { navController.popBackStack() },
-                )
-            }
-            composable(Dest.SUMMARY.route) {
-                SummaryScreen(manager = manager, goalsRepo = goalsRepo, unitPrefs = unitPrefs, bottomInset = bottomInset)
-            }
-            composable(Dest.SETTINGS.route) {
-                SettingsScreen(
-                    manager = manager,
-                    exporter = exporter,
-                    widgetPrefs = widgetPrefs,
-                    mcpPrefs = mcpPrefs,
-                    dataSourcePrefs = dataSourcePrefs,
-                    unitPrefs = unitPrefs,
-                    cloudSync = cloudSync,
-                    bottomInset = bottomInset,
-                    onManagePermissions = onManagePermissions,
-                )
-            }
-            composable("detail/{key}") { entry ->
-                val metric = entry.arguments?.getString("key")?.let { Metric.fromKey(it) }
-                if (metric == null) {
-                    navController.popBackStack()
-                } else {
-                    DetailScreen(
-                        manager = manager,
-                        metric = metric,
-                        unitPrefs = unitPrefs,
-                        onBack = { navController.popBackStack() },
-                    )
-                }
-            }
-        }
-    }
+    CadenceShell(vm, services, deepLinkMetric, onDeepLinkConsumed)
 }

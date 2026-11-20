@@ -6,29 +6,39 @@ Cadence is a private, **read-only** Android viewer for [Health Connect](https://
 
 > **Origin.** Cadence began as a fork of [GuyOnWifi/heartwood](https://github.com/GuyOnWifi/heartwood) (GPL-3.0). The GPL obligations and the upstream copyright notices stay.
 >
-> **Naming note.** The project was renamed from Heartwood to Cadence. The deployed backend hostname (`heartwood-api.dazaike.workers.dev`) and the repository URLs still carry the old name until the Worker and repos are renamed or redeployed. The default server address in the app is unchanged on purpose.
+> **Naming note.** The project was renamed from Heartwood to Cadence. The repository URLs still carry the old name until the repos are renamed. The backend now lives at `cadence-api.dazaike.workers.dev` (same database; existing accounts and tokens carry over).
 
 > No ads. No trackers. No analytics. Nothing leaves your device until you choose to sign in to cloud sync. Revolutionary, apparently.
 
+## What it looks like
+
+Cadence 2.0 is the web dashboard, rebuilt natively. Same flat neutral surfaces, same 24 dp cards with a hairline border and a small tinted category icon, same page titles, same numbers. It follows your system dark or light setting, with a System / Light / Dark choice in Settings, set in Inter, with an accent colour you pick (blue, violet, rose, orange, emerald, amber or cyan, or Material You system colours if you must). No gradients, no glows, no "wellness" pastels.
+
+On a phone you get a floating bottom bar (Overview, Activity, Heart, Sleep, Insights, and a More menu for Body, Calendar, Data Sources and Settings). On a tablet or foldable (840 dp and up) the bar becomes a left rail with the logo, the section list, a status card and a theme toggle. Charts are drawn natively: touch or drag to read a value, tap "Open day" to jump to it in the Calendar.
+
 ## What it does
 
-- **Today**, Material You cards for steps, heart rate, sleep, energy, distance, exercise, SpO₂, weight, blood pressure, and the other numbers your body generates while corporate wellness apps harvest metadata.
-- **Detail views**, charts, statistics, and recent records for every metric. Numbers, organized. A bold new concept.
-- **Weekly summary**, daily averages against goals, progress rings, and week-over-week trends. You set the goals; the app declines to invent a lifestyle for you.
-- **Home-screen widgets**, dynamically themed Glance + Material 3 widgets for the metrics worth seeing before you unlock your phone.
+- **Overview**, a customizable widget grid: daily activity rings, steps for 14 days, heart, sleep, recovery (a labelled *estimate*), body, goals this week, insights and a consistency heatmap. Named layouts, hide and show, S / M / L sizes (on a phone S is half width), reorder in Edit mode.
+- **Activity, Heart, Sleep, Body**, the web's pages: range bar (week, month, 90 days, year, all, custom) with day / week / month granularity, trends with a dotted average and goal line, weekday patterns, heart-rate zones, sleep schedule and stages, BMI, and a relationship explorer. Missing days are gaps, never zeros.
+- **Insights**, computed on-device from your own data with the same formulas as the web dashboard: readiness estimate, week-over-week changes, sleep consistency, correlations (labelled as associations), personal records. Nothing here is a medical diagnosis.
+- **Calendar**, a month grid shaded by goal progress and a day view with a heart-rate timeline and a scrubber.
+- **Data Sources**, switch between Health Connect and Samsung Health, see which data types Cadence can read, how fresh each one is, and the cloud sync status with a Sync now button.
+- **Settings**, appearance, units (Imperial or Metric), accent colour, goals, assumed max heart rate, dashboard widget visibility, widget refresh interval, the local MCP server, your Cadence cloud account, export and about.
+- **Home-screen widgets**, Glance widgets in the same neutral palette for the metrics worth seeing before you unlock your phone. They follow the system day / night setting.
 - **Export & AI Share**, write CSV or JSON through Android's file picker, or share formatted Markdown directly with your AI assistant through the system share sheet. This works fully offline; nothing is relayed through a server.
-- **Unit system**, switch between Imperial (miles, lbs, in, fl oz) and Metric (km, kg, cm, L). Imperial is the default. Debate it with physics, not us.
-- **Customizable dashboard**, reorder metric tiles and hide the noise. Your Today view, not a product manager's.
 - **Samsung Health** *(optional)*, read directly from the Samsung Health app on-device instead of Health Connect.
 - **Local AI server (MCP)** *(optional)*, an opt-in loopback Model Context Protocol server for local LLMs and tools. `localhost` only. Unchanged by cloud sync: it never leaves the device and does not use an account.
-- **Cloud sync** *(optional, off until you sign in)*, create an account or sign in from Settings > Cloud sync and Cadence uploads your readings (and goals) to a Cadence cloud server so you can see them on the web dashboard and let ChatGPT, Claude or another AI assistant read them through the cloud's remote MCP server. Details below.
+- **Cloud sync** *(optional, off until you sign in)*, create an account or sign in from Settings > Account and Cadence uploads your readings (and goals) to a Cadence cloud server so you can see them on the web dashboard and let ChatGPT, Claude or another AI assistant read them through the cloud's remote MCP server. Details below.
 
 ## The boringly competent stack
 
-- Kotlin, Jetpack Compose, Material 3, dynamic color
+- Kotlin, Jetpack Compose, a small Material 3 base for dialogs and fields; the design system itself (colour tokens, type scale, cards, charts) is native Compose ported from the web dashboard
+- Charts are drawn with Compose `Canvas`: no chart library
+- The analytics (readiness, sleep consistency, insights, correlations, goal stats) are a Kotlin port of the web dashboard's `analytics.ts` / `view.ts` with JUnit tests
+- [Inter](https://rsms.me/inter/) (variable), bundled, under the SIL Open Font License 1.1
 - `androidx.health.connect:connect-client` and Samsung Health Data SDK for on-device reads
 - `androidx.glance` widgets and WorkManager refreshes (widgets, and cloud sync when enabled)
-- DataStore for goals, dashboard layout, data source, unit and cloud-sync preferences; the cloud session token is encrypted with an Android Keystore key
+- DataStore for goals, dashboard layouts, appearance, data source, unit and cloud-sync preferences; the cloud session token is encrypted with an Android Keystore key
 - NanoHTTPD for the optional loopback MCP server; plain `HttpURLConnection` for cloud sync (no extra networking dependency)
 - `minSdk 30`, `targetSdk 36`
 
@@ -83,7 +93,7 @@ Cadence requests only **read** permissions on your health data. You decide which
 **Out of the box, nothing is transmitted.** There are no accounts, no analytics and no trackers. The app declares the `INTERNET` permission, but it is only used by the two opt-in features below.
 
 - **Local AI server (MCP)**, opt-in, listens strictly on loopback (`127.0.0.1`). No account, no cloud.
-- **Cloud sync**, opt-in, and does nothing until you sign in (Settings > Cloud sync). After you sign in, Cadence uploads your health readings (steps, distance, energy, floors, exercise, hydration, hourly average heart rate, resting heart rate, HRV, sleep sessions with stages, SpO₂, respiratory rate, VO₂ max, weight, height, blood pressure, blood glucose) and your goals over HTTPS to the server address shown in Settings (default `https://heartwood-api.dazaike.workers.dev`, editable; plain HTTP is accepted only for `localhost`). Signing out stops syncing and forgets the session on the phone; data already uploaded stays in your cloud account until you delete it from the dashboard. Cadence stays read-only against Health Connect, and cloud sync never writes to it.
+- **Cloud sync**, opt-in, and does nothing until you sign in (Settings > Account). After you sign in, Cadence uploads your health readings (steps, distance, energy, floors, exercise, hydration, hourly average heart rate, resting heart rate, HRV, sleep sessions with stages, SpO₂, respiratory rate, VO₂ max, weight, height, blood pressure, blood glucose) and your goals over HTTPS to the server address shown in Settings (default `https://cadence-api.dazaike.workers.dev`, editable; plain HTTP is accepted only for `localhost`). Signing out stops syncing and forgets the session on the phone; data already uploaded stays in your cloud account until you delete it from the dashboard. Cadence stays read-only against Health Connect, and cloud sync never writes to it.
 
 ### Cloud sync details
 
@@ -98,3 +108,5 @@ The optional Samsung Health integration reads directly from Samsung Health throu
 ## License
 
 [GPL-3.0-or-later](LICENSE) © Eason Huang
+
+The bundled [Inter](https://rsms.me/inter/) typeface is © The Inter Project Authors, licensed under the [SIL Open Font License 1.1](https://openfontlicense.org).

@@ -7,7 +7,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
-import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
@@ -16,6 +15,7 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
@@ -23,10 +23,12 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import androidx.glance.unit.ColorProvider
 import dev.dazaike.cadence.CadenceApp
 import dev.dazaike.cadence.MainActivity
 import dev.dazaike.cadence.data.Metric
@@ -48,49 +50,50 @@ class CadenceWidget : GlanceAppWidget() {
             .mapNotNull { m -> summaries.firstOrNull { it.metric == m && it.granted && it.hasData } }
             .take(4)
 
-        provideContent {
-            GlanceTheme {
-                WidgetContent(tiles)
-            }
-        }
+        provideContent { WidgetContent(tiles) }
     }
 }
 
 @Composable
 private fun WidgetContent(tiles: List<MetricSummary>) {
     val context = LocalContext.current
-    Column(
+    // 1 dp hairline: a border-coloured shell with the card inset by one dp.
+    Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(GlanceTheme.colors.widgetBackground)
+            .background(WidgetColors.border)
             .cornerRadius(24.dp)
-            .padding(14.dp)
+            .padding(1.dp)
             .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
     ) {
-        Text(
-            text = "Cadence",
-            style = TextStyle(
-                color = GlanceTheme.colors.primary,
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-            ),
-        )
-        Spacer(GlanceModifier.height(10.dp))
-        if (tiles.isEmpty()) {
+        Column(
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .background(WidgetColors.card)
+                .cornerRadius(23.dp)
+                .padding(14.dp),
+        ) {
             Text(
-                text = "Tap to connect your health data",
-                style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp),
+                text = "Cadence",
+                style = TextStyle(color = WidgetColors.textPrimary, fontWeight = FontWeight.Medium, fontSize = 14.sp),
             )
-        } else {
-            tiles.chunked(2).forEach { rowTiles ->
-                Row(modifier = GlanceModifier.fillMaxWidth()) {
-                    rowTiles.forEachIndexed { i, tile ->
-                        Tile(tile, GlanceModifier.defaultWeight())
-                        if (i == 0 && rowTiles.size > 1) Spacer(GlanceModifier.width(10.dp))
+            Spacer(GlanceModifier.height(10.dp))
+            if (tiles.isEmpty()) {
+                Text(
+                    text = "Tap to connect your health data",
+                    style = TextStyle(color = WidgetColors.textSecondary, fontSize = 13.sp),
+                )
+            } else {
+                tiles.chunked(2).forEach { rowTiles ->
+                    Row(modifier = GlanceModifier.fillMaxWidth()) {
+                        rowTiles.forEachIndexed { i, tile ->
+                            Tile(tile, GlanceModifier.defaultWeight())
+                            if (i == 0 && rowTiles.size > 1) Spacer(GlanceModifier.width(10.dp))
+                        }
+                        if (rowTiles.size == 1) Spacer(GlanceModifier.defaultWeight())
                     }
-                    if (rowTiles.size == 1) Spacer(GlanceModifier.defaultWeight())
+                    Spacer(GlanceModifier.height(10.dp))
                 }
-                Spacer(GlanceModifier.height(10.dp))
             }
         }
     }
@@ -100,29 +103,29 @@ private fun WidgetContent(tiles: List<MetricSummary>) {
 private fun Tile(tile: MetricSummary, modifier: GlanceModifier) {
     Column(
         modifier = modifier
-            .background(GlanceTheme.colors.secondaryContainer)
-            .cornerRadius(18.dp)
+            .background(WidgetColors.tile)
+            .cornerRadius(16.dp)
             .padding(12.dp),
     ) {
-        Text(
-            text = tile.metric.title,
-            maxLines = 1,
-            style = TextStyle(color = GlanceTheme.colors.onSecondaryContainer, fontSize = 12.sp),
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(GlanceModifier.size(6.dp).background(ColorProvider(tile.metric.accent)).cornerRadius(3.dp)) {}
+            Spacer(GlanceModifier.width(6.dp))
+            Text(
+                text = tile.metric.title,
+                maxLines = 1,
+                style = TextStyle(color = WidgetColors.textSecondary, fontSize = 12.sp),
+            )
+        }
         Spacer(GlanceModifier.height(4.dp))
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
                 text = tile.value,
-                style = TextStyle(
-                    color = GlanceTheme.colors.onSecondaryContainer,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                ),
+                style = TextStyle(color = WidgetColors.textPrimary, fontWeight = FontWeight.Medium, fontSize = 22.sp),
             )
             Spacer(GlanceModifier.width(3.dp))
             Text(
                 text = tile.unit,
-                style = TextStyle(color = GlanceTheme.colors.onSecondaryContainer, fontSize = 11.sp),
+                style = TextStyle(color = WidgetColors.textSecondary, fontSize = 11.sp),
             )
         }
     }

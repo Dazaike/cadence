@@ -2,8 +2,26 @@
 
 ## [Unreleased]
 
+## [v2.0.0] - 2026-11-19
+
 ### Changed
-- Renamed the app from Heartwood to **Cadence**. New application id `dev.dazaike.cadence`, so this installs as a separate app (no data migration; set up and sign in again). Export files are now `cadence-export.*` with a `Cadence Health Data Export` header. The default cloud server address is unchanged.
+- **Full UI redesign: the app is now the web dashboard, rebuilt natively.** Flat neutral surfaces (24 dp cards, hairline borders, no gradients), the web's dark and light palettes, Inter (variable) typography, and the web's page set: Overview, Activity, Heart, Sleep, Body, Insights, Calendar, Data Sources and Settings, with the same titles, subtitles, range bar (week, month, 90 days, year, all, custom) and day / week / month granularity.
+- Navigation: a floating rounded bottom bar (Overview, Activity, Heart, Sleep, Insights, More) on phones; a left rail with logo, section list, status card and theme toggle at 840 dp and wider. Page transitions fade and slide, the selection highlight springs, and the system "remove animations" setting is respected.
+- Appearance: System / Light / Dark, and a selectable accent (blue, violet, rose, orange, emerald, amber, cyan, or Material You system colours on Android 12+). Material You is no longer the default.
+- Overview is a customizable widget grid with named layouts, hide and show, S / M / L sizes (S is half width on a phone) and reordering in Edit mode: daily activity rings, steps for 14 days, heart, sleep, recovery, body, goals this week, insights, activity consistency. The old metric-tile Today screen, per-metric detail screens and weekly Summary are gone; dashboard layout settings start fresh.
+- Charts are native Compose Canvas (trend, bars, range band, stages, schedule, heatmap, scatter, gauge, day timeline). Touch or drag to read values; "Open day" jumps to the Calendar.
+- Status card (rail, and Data Sources on phones): "Your data", cloud sync status with the last sync as a relative and an exact time, and a Sync now button. Home-screen widgets are restyled to the same neutral palette (they follow the system day / night setting).
+- The pixel-art Cadence mark (nearest-neighbour scaled) appears in the rail, onboarding and About. The launcher icon is unchanged.
+- Version 2.0.0 (versionCode 4).
+- Renamed the app from Heartwood to **Cadence**. New application id `dev.dazaike.cadence`, so this installs as a separate app (no data migration; set up and sign in again). Export files are now `cadence-export.*` with a `Cadence Health Data Export` header.
+- The default cloud server is now `cadence-api.dazaike.workers.dev` (same database, accounts and tokens carry over). Existing installs may need to update the server address in Settings > Account.
+
+### Added
+- On-device analytics ported from the web dashboard (readiness estimate, resting-HR proxy, sleep consistency, insights, correlations, goal hit rate and streaks, week and month comparisons, BMI, activity heatmap), with JUnit tests. Where the data source cannot supply something, the web's empty state is shown instead of an invented number. Days without a recording are gaps, never zeros.
+- Settings: appearance, accent, goals in your display units (including a sleep goal, kept on the phone), assumed max heart rate, dashboard widget visibility, and a reset for preferences.
+
+### Removed
+- Dynamic-colour-only theme, the Today / Summary screens and the Navigation Compose and Glance Material 3 dependencies.
 
 ## [v1.1.0] - 2026-11-18
 

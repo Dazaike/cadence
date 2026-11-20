@@ -27,8 +27,8 @@ android {
         applicationId = "dev.dazaike.cadence"
         minSdk = 30
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.1.0"
+        versionCode = 4
+        versionName = "2.0.0"
         vectorDrawables { useSupportLibrary = true }
     }
 
@@ -106,16 +106,15 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended)
-    implementation(libs.androidx.navigation.compose)
     debugImplementation(libs.androidx.ui.tooling)
 
     implementation(libs.androidx.health.connect)
     implementation(libs.androidx.glance.appwidget)
-    implementation(libs.androidx.glance.material3)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.nanohttpd)
     implementation(files("libs/samsung-health-data-api.aar"))
     implementation("com.google.code.gson:gson:2.13.2")
+    testImplementation(libs.junit)
 }

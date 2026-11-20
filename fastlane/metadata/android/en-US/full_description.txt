@@ -1,17 +1,20 @@
-Cadence is a private, open-source window into the health and fitness data stored
-in Android's Health Connect. It only ever reads from Health Connect, and it has no ads
+Cadence is a private, open-source health dashboard for the data stored in Android's
+Health Connect (and, optionally, Samsung Health). It only ever reads, and it has no ads
 or trackers. By default nothing you see leaves your device; there is an optional
 cloud sync you have to sign in to before anything is uploaded.
 
 Features:
 
-* Today dashboard, Material You cards for steps, heart rate, sleep, energy, distance,
-  exercise, SpO2, weight, blood pressure and more, each with an at-a-glance sparkline.
-* Detail views, tap any metric for a full chart, statistics and recent records.
-* Weekly summary, daily averages measured against goals you set, with progress rings
-  and week-over-week trends.
-* Home-screen widgets, your key numbers, themed to match your wallpaper.
-* Export, save your accessible data to a CSV or JSON file at any time.
+* Overview, a customizable widget grid with named layouts: daily activity rings, steps,
+  heart, sleep, recovery, body, goals and a consistency heatmap.
+* Activity, Heart, Sleep and Body pages with trends, goal lines, weekday patterns, heart-rate
+  zones, sleep schedule and stages. Days without data are gaps, never zeros.
+* Insights computed on your device: readiness estimate, week-over-week changes, sleep
+  consistency and correlations, clearly labelled as estimates.
+* Calendar with a month view and a day timeline.
+* Light, dark or system theme, a selectable accent colour, and an Imperial or Metric choice.
+* Home-screen widgets in the same neutral palette.
+* Export, save your accessible data to a CSV or JSON file, or share Markdown with an AI assistant.
 * Optional cloud sync, sign in to your own Cadence cloud account to see the same data
   on a web dashboard and let AI assistants read it through a remote MCP server. Off until
   you sign in; sign out any time.

@@ -10,7 +10,6 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceId
-import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.GlanceModifier
 import kotlinx.coroutines.flow.first
@@ -37,6 +36,11 @@ import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
+import androidx.glance.layout.Row
+import androidx.glance.layout.size
+import androidx.glance.layout.width
 import androidx.glance.unit.ColorProvider
 import dev.dazaike.cadence.CadenceApp
 import dev.dazaike.cadence.MainActivity
@@ -62,7 +66,7 @@ class MetricWidget : GlanceAppWidget() {
         // Compute fresh data for whatever metric is configured, into state, before first render.
         refreshData(context, id)
         provideContent {
-            GlanceTheme { MetricWidgetContent() }
+            MetricWidgetContent()
         }
     }
 
@@ -106,12 +110,12 @@ private fun MetricWidgetContent() {
     val density = context.resources.displayMetrics.density
     val pad = 16f
 
-    Column(
+    Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(GlanceTheme.colors.widgetBackground)
+            .background(WidgetColors.border)
             .cornerRadius(24.dp)
-            .padding(pad.dp)
+            .padding(1.dp)
             .clickable(
                 actionStartActivity(
                     Intent(context, MainActivity::class.java)
@@ -120,39 +124,51 @@ private fun MetricWidgetContent() {
                 ),
             ),
     ) {
-        Text(
-            text = metric.title,
-            style = TextStyle(color = ColorProvider(metric.accent), fontWeight = FontWeight.Bold, fontSize = 14.sp),
-        )
-        Spacer(GlanceModifier.height(2.dp))
-        when {
-            !granted -> Text(
-                text = "Tap to connect",
-                style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp),
-            )
-            points.size < 2 -> {
-                Text(value, style = TextStyle(color = GlanceTheme.colors.onSurface, fontWeight = FontWeight.Bold, fontSize = 30.sp))
-                Text("No recent data", style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp))
+        Column(
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .background(WidgetColors.card)
+                .cornerRadius(23.dp)
+                .padding(pad.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(GlanceModifier.size(6.dp).background(ColorProvider(metric.accent)).cornerRadius(3.dp)) {}
+                Spacer(GlanceModifier.width(6.dp))
+                Text(
+                    text = metric.title,
+                    style = TextStyle(color = WidgetColors.textSecondary, fontWeight = FontWeight.Medium, fontSize = 14.sp),
+                )
             }
-            else -> {
-                Text(value, style = TextStyle(color = GlanceTheme.colors.onSurface, fontWeight = FontWeight.Bold, fontSize = 30.sp))
-                Spacer(GlanceModifier.height(8.dp))
-                // Fill all remaining space below the header. Header ≈ title(20) + value(38) + gaps.
-                val headerDp = 70f
-                val chartHdp = (size.height.value - 2f * pad - headerDp).coerceAtLeast(40f)
-                val chartWdp = (size.width.value - 2f * pad).coerceAtLeast(40f)
-                val bmp = chartBitmap(
-                    values = points,
-                    kind = metric.kind,
-                    colorArgb = metric.accent.toArgb(),
-                    widthPx = (chartWdp * density).toInt(),
-                    heightPx = (chartHdp * density).toInt(),
+            Spacer(GlanceModifier.height(2.dp))
+            when {
+                !granted -> Text(
+                    text = "Tap to connect",
+                    style = TextStyle(color = WidgetColors.textSecondary, fontSize = 13.sp),
                 )
-                Image(
-                    provider = ImageProvider(bmp),
-                    contentDescription = null,
-                    modifier = GlanceModifier.fillMaxWidth().height(chartHdp.dp),
-                )
+                points.size < 2 -> {
+                    Text(value, style = TextStyle(color = WidgetColors.textPrimary, fontWeight = FontWeight.Medium, fontSize = 30.sp))
+                    Text("No recent data", style = TextStyle(color = WidgetColors.textSecondary, fontSize = 12.sp))
+                }
+                else -> {
+                    Text(value, style = TextStyle(color = WidgetColors.textPrimary, fontWeight = FontWeight.Medium, fontSize = 30.sp))
+                    Spacer(GlanceModifier.height(8.dp))
+                    // Fill all remaining space below the header. Header ≈ title(20) + value(38) + gaps.
+                    val headerDp = 70f
+                    val chartHdp = (size.height.value - 2f * pad - headerDp - 2f).coerceAtLeast(40f)
+                    val chartWdp = (size.width.value - 2f * pad - 2f).coerceAtLeast(40f)
+                    val bmp = chartBitmap(
+                        values = points,
+                        kind = metric.kind,
+                        colorArgb = metric.accent.toArgb(),
+                        widthPx = (chartWdp * density).toInt(),
+                        heightPx = (chartHdp * density).toInt(),
+                    )
+                    Image(
+                        provider = ImageProvider(bmp),
+                        contentDescription = null,
+                        modifier = GlanceModifier.fillMaxWidth().height(chartHdp.dp),
+                    )
+                }
             }
         }
     }

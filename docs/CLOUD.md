@@ -1,12 +1,12 @@
 # Cloud sync: how the pieces fit
 
-> The product was renamed from Heartwood to Cadence. The backend hostname (`heartwood-api.dazaike.workers.dev`) and the GitHub repository URLs below still carry the old name until the Worker and repos are renamed.
+> The product was renamed from Heartwood to Cadence. The backend is now `cadence-api.dazaike.workers.dev`; the GitHub repository URLs below still carry the old name until the repos are renamed.
 
 Cloud sync is optional. Without signing in, the app never touches the network.
 
 ```
 Android app  --HTTPS-->  Cloud (Cloudflare Worker + D1)  <--HTTPS--  Web dashboard
-(this repo)              heartwood-api.dazaike.workers.dev            (Vercel)
+(this repo)              cadence-api.dazaike.workers.dev             (Vercel)
                                   ^
                                   |  read-only MCP (/mcp/<token>)
                           ChatGPT, Claude, other MCP clients
@@ -20,7 +20,7 @@ Android app  --HTTPS-->  Cloud (Cloudflare Worker + D1)  <--HTTPS--  Web dashboa
 
 ## Set up
 
-1. Create an account in the app (Settings > Cloud sync) or on the dashboard. The server address defaults to `https://heartwood-api.dazaike.workers.dev` and can be changed.
+1. Create an account in the app (Settings > Account) or on the dashboard. The server address defaults to `https://cadence-api.dazaike.workers.dev` and can be changed.
 2. The app backfills up to 365 days, then re-sends the last 3 days about every 15 minutes while online (and on "Sync now").
 3. Sign in to the dashboard with the same account to see the data.
 4. For ChatGPT or Claude: dashboard Settings > AI access > create a token, then paste the `.../mcp/hwm_...` URL into the client's custom connector. That URL is a secret; revoke it from the same page.

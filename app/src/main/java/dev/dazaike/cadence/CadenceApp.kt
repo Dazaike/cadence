@@ -2,6 +2,7 @@ package dev.dazaike.cadence
 
 import android.app.Application
 import dev.dazaike.cadence.cloud.CloudApi
+import dev.dazaike.cadence.data.AppPreferences
 import dev.dazaike.cadence.cloud.CloudPreferences
 import dev.dazaike.cadence.cloud.CloudSyncManager
 import dev.dazaike.cadence.data.DashboardLayoutRepository
@@ -25,6 +26,7 @@ import kotlinx.coroutines.launch
 
 class CadenceApp : Application() {
     val healthConnect: HealthConnectManager by lazy { HealthConnectManager(this) }
+    val appPrefs: AppPreferences by lazy { AppPreferences(this) }
     val samsungHealth: SamsungHealthManager by lazy { SamsungHealthManager(this) }
     val samsungWake: SamsungHealthWake by lazy { SamsungHealthWake(this) }
     val dataSourcePrefs: DataSourcePreferences by lazy { DataSourcePreferences(this) }

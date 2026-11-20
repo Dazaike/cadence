@@ -1,0 +1,5 @@
+- Cadence 2.0: the whole app is redesigned to match the web dashboard
+- Overview widget grid with named layouts, Activity, Heart, Sleep, Body, Insights, Calendar and Data Sources pages
+- Light, dark and system themes, selectable accent colour, Inter typography
+- Insights, readiness estimate and sleep consistency computed on your device
+- Cloud sync status with Sync now; default server is now cadence-api.dazaike.workers.dev

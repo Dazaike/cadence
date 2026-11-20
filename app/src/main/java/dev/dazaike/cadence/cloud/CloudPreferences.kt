@@ -13,8 +13,7 @@ import org.json.JSONObject
 
 private val Context.cloudDataStore by preferencesDataStore(name = "cadence_cloud")
 
-// Legacy hostname: the deployed Worker still carries the pre-rename name "heartwood-api". Keep it until the Worker is renamed.
-const val DEFAULT_SERVER_URL = "https://heartwood-api.dazaike.workers.dev"
+const val DEFAULT_SERVER_URL = "https://cadence-api.dazaike.workers.dev"
 
 /** Everything the Cloud sync UI needs from disk. Never contains the session token. */
 data class CloudSettings(
