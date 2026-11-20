@@ -11,6 +11,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -250,7 +252,8 @@ private fun BottomBar(route: Route, onRoute: (Route) -> Unit, modifier: Modifier
             .fillMaxWidth()
             .shadow(8.dp, shape, ambientColor = Color.Black.copy(alpha = if (c.dark) 0.7f else 0.2f), spotColor = Color.Black.copy(alpha = if (c.dark) 0.7f else 0.2f))
             .clip(shape)
-            .background(c.card)
+            .background(c.toneAccent.bg.compositeOver(c.card))
+            .border(1.dp, c.accent.c600.copy(alpha = 0.35f), shape)
             .semantics { contentDescription = "Sections" },
     ) {
         val itemWidth = (maxWidth - 12.dp) / slots
@@ -262,7 +265,7 @@ private fun BottomBar(route: Route, onRoute: (Route) -> Unit, modifier: Modifier
                     .width(itemWidth)
                     .height(BAR_HEIGHT - 12.dp)
                     .clip(RoundedCornerShape(22.dp))
-                    .background(c.pageBg),
+                    .background(c.accent.c600),
             )
             Row(Modifier.fillMaxWidth()) {
                 Route.TABS.forEach { r -> BarItem(r.label, r.icon, route == r, Modifier.weight(1f)) { onRoute(r) } }
@@ -321,7 +324,7 @@ private fun BarItem(label: String, icon: ImageVector, active: Boolean, modifier:
             },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, null, tint = if (active) c.accentStrong else c.textSecondary, modifier = Modifier.size(24.dp))
+        Icon(icon, null, tint = if (active) c.onFill else c.toneAccent.fg, modifier = Modifier.size(24.dp))
     }
 }
 
