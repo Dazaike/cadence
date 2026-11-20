@@ -49,8 +49,8 @@ No "AI-native health intelligence layer." Just native Android code reading local
 Clone the repository. Build the APK. Avoid downloading a random prebuilt binary from a forum run by a man named `APKMaster69`.
 
 ```sh
-git clone https://github.com/Dazaike/heartwood
-cd heartwood
+git clone https://github.com/Dazaike/cadence
+cd cadence
 ./gradlew :app:assembleDebug
 # APK: app/build/outputs/apk/debug/app-debug.apk
 ```

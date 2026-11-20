@@ -14,9 +14,9 @@ Android app  --HTTPS-->  Cloud (Cloudflare Worker + D1)  <--HTTPS--  Web dashboa
 
 | Part | Repo | Role |
 |---|---|---|
-| Android app | [Dazaike/heartwood](https://github.com/Dazaike/heartwood/tree/cloud-sync) (this repo, branch `cloud-sync`) | Reads Health Connect or Samsung Health and uploads metric/SI readings |
-| Cloud | [Dazaike/heartwood-cloud](https://github.com/Dazaike/heartwood-cloud) | Accounts, storage, REST API, remote MCP server. API reference in its `docs/API.md` |
-| Web dashboard | [Dazaike/heartwood-dashboard](https://github.com/Dazaike/heartwood-dashboard) | Charts, goals, imports; creates the MCP tokens. Live at `https://health-dashboard-one-sandy-80.vercel.app` |
+| Android app | [Dazaike/cadence](https://github.com/Dazaike/cadence) (this repo) | Reads Health Connect or Samsung Health and uploads metric/SI readings |
+| Cloud | [Dazaike/cadence-cloud](https://github.com/Dazaike/cadence-cloud) | Accounts, storage, REST API, remote MCP server. API reference in its `docs/API.md` |
+| Web dashboard | [Dazaike/cadence-dashboard](https://github.com/Dazaike/cadence-dashboard) | Charts, goals, imports; creates the MCP tokens |
 
 ## Set up
 

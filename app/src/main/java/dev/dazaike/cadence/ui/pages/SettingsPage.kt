@@ -102,7 +102,7 @@ import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.roundToInt
 
-private const val REPO_URL = "https://github.com/GuyOnWifi/heartwood"
+private const val REPO_URL = "https://github.com/Dazaike/cadence"
 
 /** Titles of the Overview widgets (web `WIDGETS[].title`). */
 private val WIDGET_TITLES = mapOf(

@@ -4,19 +4,19 @@
 Categories:
   - Health & Fitness
 License: GPL-3.0-or-later
-AuthorName: GuyOnWifi
-AuthorWebSite: https://github.com/GuyOnWifi
-SourceCode: https://github.com/GuyOnWifi/heartwood
-IssueTracker: https://github.com/GuyOnWifi/heartwood/issues
+AuthorName: Dazaike
+AuthorWebSite: https://github.com/Dazaike
+SourceCode: https://github.com/Dazaike/cadence
+IssueTracker: https://github.com/Dazaike/cadence/issues
 
 RepoType: git
-Repo: https://github.com/GuyOnWifi/heartwood.git
+Repo: https://github.com/Dazaike/cadence.git
 
 # Reproducible builds: F-Droid builds from source, downloads your signed APK from this URL for
 # the same version, and if they match byte-for-byte it ships YOUR signed APK. The release
 # workflow uploads cadence-v<versionName>.apk to the GitHub Release for tag v<versionName>,
 # so %v (versionName) fills both slots.
-Binaries: https://github.com/GuyOnWifi/heartwood/releases/download/v%v/cadence-v%v.apk
+Binaries: https://github.com/Dazaike/cadence/releases/download/v%v/cadence-v%v.apk
 
 # NOTE: the pin below is the key that signed the pre-rename builds. The application id changed
 # to dev.dazaike.cadence, so it MUST be re-pinned to the new release key before submitting.
