@@ -32,3 +32,5 @@ kls_database.db
 # Local plans & temporary files
 *plan*.md
 *.png
+# ...but app resources (launcher icon, logo mark) are source files
+!app/src/main/res/**/*.png
