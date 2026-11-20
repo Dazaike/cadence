@@ -31,6 +31,11 @@ import dev.dazaike.cadence.data.SleepSessionData
 import dev.dazaike.cadence.data.SleepStageHours
 import dev.dazaike.cadence.data.UnitSystem
 import dev.dazaike.cadence.data.convertValue
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -454,26 +459,27 @@ class SamsungHealthManager(private val context: Context) : HealthDataSource {
 
     // ---- Cloud sync reads ----------------------------------------------------------------------
 
-    /** One read per day (a multi-week read of watch samples is too heavy), reduced to hourly averages. */
-    override suspend fun readHourlyHeartRate(days: Int): List<SeriesPoint> {
+    /** One read per day (a multi-week read of watch samples is too heavy), a few days in parallel, reduced to hourly averages. */
+    override suspend fun readHourlyHeartRateRange(fromDaysAgo: Int, toDaysAgo: Int): List<SeriesPoint> = coroutineScope {
         val today = LocalDate.now()
-        val out = ArrayList<SeriesPoint>()
-        for (offset in days downTo 0) {
-            val day = today.minusDays(offset.toLong())
-            val end = if (offset == 0) LocalDateTime.now() else day.plusDays(1).atStartOfDay()
-            rowsBetween(DataTypes.HEART_RATE.readDataRequestBuilder, day.atStartOfDay(), end)
-                .mapNotNull { point ->
-                    point.getValue(DataType.HeartRateType.HEART_RATE)?.let { bpm ->
-                        point.timestamp().atZone(zone).truncatedTo(ChronoUnit.HOURS).toInstant() to bpm
-                    }
+        val gate = Semaphore(HR_PARALLEL_DAYS)
+        (fromDaysAgo downTo toDaysAgo).map { offset ->
+            async { gate.withPermit { hourlyHeartRateForDay(today, offset) } }
+        }.awaitAll().flatten()
+    }
+
+    private suspend fun hourlyHeartRateForDay(today: LocalDate, offset: Int): List<SeriesPoint> {
+        val day = today.minusDays(offset.toLong())
+        val end = if (offset == 0) LocalDateTime.now() else day.plusDays(1).atStartOfDay()
+        return rowsBetween(DataTypes.HEART_RATE.readDataRequestBuilder, day.atStartOfDay(), end)
+            .mapNotNull { point ->
+                point.getValue(DataType.HeartRateType.HEART_RATE)?.let { bpm ->
+                    point.timestamp().atZone(zone).truncatedTo(ChronoUnit.HOURS).toInstant() to bpm
                 }
-                .groupBy({ it.first }, { it.second })
-                .toSortedMap()
-                .forEach { (hour, values) ->
-                    out += SeriesPoint(hour, values.average().toFloat(), timeFmt.format(hour.atZone(zone)))
-                }
-        }
-        return out
+            }
+            .groupBy({ it.first }, { it.second })
+            .toSortedMap()
+            .map { (hour, values) -> SeriesPoint(hour, values.average().toFloat(), timeFmt.format(hour.atZone(zone))) }
     }
 
     override suspend fun readBloodPressure(days: Int): List<BloodPressureReading> =
@@ -561,6 +567,7 @@ class SamsungHealthManager(private val context: Context) : HealthDataSource {
 
     private companion object {
         const val HR_BUCKET_SECONDS = 300L
+        const val HR_PARALLEL_DAYS = 4
         const val MILLIS_PER_HOUR = 3_600_000f
         const val UNSUPPORTED_PERMISSION = "samsung:unsupported"
         const val UNSUPPORTED_CAPTION = "Not available from Samsung Health"

@@ -11,8 +11,14 @@ interface HealthDataSource {
     suspend fun readDailySeries(metric: Metric, days: Int, unitSystem: UnitSystem = UnitSystem.IMPERIAL): List<SeriesPoint>
     suspend fun exportRows(metric: Metric, days: Int, unitSystem: UnitSystem = UnitSystem.IMPERIAL): List<SeriesPoint>
 
-    /** Cloud sync: heart rate reduced to one average per local clock hour (point time = hour start). */
-    suspend fun readHourlyHeartRate(days: Int): List<SeriesPoint>
+    /**
+     * Heart rate reduced to one average per local clock hour (point time = hour start), for the local days
+     * `fromDaysAgo` through `toDaysAgo` inclusive (0 = today, `fromDaysAgo >= toDaysAgo`), oldest first.
+     */
+    suspend fun readHourlyHeartRateRange(fromDaysAgo: Int, toDaysAgo: Int): List<SeriesPoint>
+
+    /** Cloud sync: hourly heart-rate averages for the last [days] days plus today. */
+    suspend fun readHourlyHeartRate(days: Int): List<SeriesPoint> = readHourlyHeartRateRange(days, 0)
 
     /** Cloud sync: full blood-pressure readings (systolic and diastolic), oldest first. */
     suspend fun readBloodPressure(days: Int): List<BloodPressureReading>

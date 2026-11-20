@@ -287,12 +287,12 @@ class HealthConnectManager(private val context: Context) : HealthDataSource {
     // ---- Cloud sync reads ----------------------------------------------------------------------
 
     /** Hourly heart-rate averages via Health Connect aggregation, in 14-day slices to bound each request. */
-    override suspend fun readHourlyHeartRate(days: Int): List<SeriesPoint> {
-        val now = Instant.now()
-        var cursor = daysAgoStart(days)
+    override suspend fun readHourlyHeartRateRange(fromDaysAgo: Int, toDaysAgo: Int): List<SeriesPoint> {
+        val limit = if (toDaysAgo <= 0) Instant.now() else daysAgoStart(toDaysAgo - 1)
+        var cursor = daysAgoStart(fromDaysAgo)
         val out = ArrayList<SeriesPoint>()
-        while (cursor < now) {
-            val end = minOf(cursor.plus(Duration.ofDays(HOURLY_SLICE_DAYS)), now)
+        while (cursor < limit) {
+            val end = minOf(cursor.plus(Duration.ofDays(HOURLY_SLICE_DAYS)), limit)
             client.aggregateGroupByDuration(
                 AggregateGroupByDurationRequest(
                     metrics = setOf(HeartRateRecord.BPM_AVG),

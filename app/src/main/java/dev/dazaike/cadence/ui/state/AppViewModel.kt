@@ -80,7 +80,7 @@ class AppViewModel(
             _refreshing.value = true
             try {
                 if (userInitiated) runCatching { samsungWake.wakeAndSettle() }
-                _loaded.value = HealthViewLoader.load(source)
+                _loaded.value = HealthViewLoader.load(source) { partial -> _loaded.value = partial }
             } finally {
                 _refreshing.value = false
             }

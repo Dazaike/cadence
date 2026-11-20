@@ -122,7 +122,8 @@ fun OverviewPage() {
         }
 
         BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val cols = if (LocalWide.current && maxWidth >= 900.dp) 3 else 2
+            // Phones get one full-width column (half-width cards squeezed titles and rows); wide screens use two or three.
+            val cols = if (LocalWide.current) (if (maxWidth >= 900.dp) 3 else 2) else 1
             val colWidth = (maxWidth - GAP * (cols - 1)) / cols
             class Cell(val id: String, val span: Int)
             val cells = visible.mapNotNull { id ->
